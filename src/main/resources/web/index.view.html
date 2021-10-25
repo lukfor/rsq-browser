@@ -1,0 +1,44 @@
+{{ title = application }}
+{{include "layouts/header.view.html"}}
+
+<div class="text-header bg-primary">
+  <h1 class="jumbotron-heading text-center">
+    {{application}}
+  </h1>
+
+  <p class="lead text-center">
+    Free ...... service
+  </p>
+</div>
+
+<div class="text-center" style="padding-top:40px; padding-bottom:40px">
+  This service allows you to ...
+</div>
+
+<div id="container" class="container">
+  <div class="row justify-content-md-center">
+    <div class="col-sm-5 text-center">
+        <form action="{{routeUrl("queries_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+              <a class="nav-link active" href="#">Region</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link disabled" href="#">Gene</a>
+            </li>
+          </ul>
+          <br>
+        <div class="form-group">
+          <input name="q" class="form-control" placeholder="chr1:2000000-5000000" autocomplete="off" value="chr1:10000000-11000000">
+        </div>
+        <div class="form-group">
+        </div>
+        <br>
+        <button type="submit" id="submit" class="btn btn-primary btn-lg btn-upload">Search</button>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+{{include "layouts/footer.view.html"}}

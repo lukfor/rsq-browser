@@ -1,0 +1,5 @@
+port: 7000
+maxUploadSizeMb: 35
+datasets:
+  - name: Hispanic/Latino
+    filename: /Users/lukfor/Data/r2web/bi.snv.tab.gz
