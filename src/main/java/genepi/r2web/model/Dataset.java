@@ -1,12 +1,14 @@
 package genepi.r2web.model;
 
+import java.util.List;
+
 public class Dataset {
 
 	private String name;
 
 	private String filename;
 
-	private String[] subsets;
+	private List<SubDataset> subsets;
 
 	public String getName() {
 		return name;
@@ -24,11 +26,11 @@ public class Dataset {
 		this.filename = filename;
 	}
 
-	public String[] getSubsets() {
+	public List<SubDataset> getSubsets() {
 		return subsets;
 	}
 
-	public void setSubsets(String[] subsets) {
+	public void setSubsets(List<SubDataset> subsets) {
 		this.subsets = subsets;
 	}
 

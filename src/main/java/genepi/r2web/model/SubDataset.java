@@ -1,35 +1,45 @@
 package genepi.r2web.model;
 
-import java.util.List;
-import java.util.Vector;
-
 public class SubDataset {
 
-	private String name;
+	private String column;
 
-	private List<AggregatedBin> aggregatedBins = new Vector<AggregatedBin>();
+	private String population;
 
-	public SubDataset(String name, float[] bins) {
-		this.name = name;
-		for (int i = 1; i < bins.length; i++) {
-			aggregatedBins.add(new AggregatedBin(bins[i]));
-		}
+	private String reference;
+
+	private String chip;
+
+	public void setChip(String chip) {
+		this.chip = chip;
 	}
 
-	public List<AggregatedBin> getAggregatedBins() {
-		return aggregatedBins;
+	public String getChip() {
+		return chip;
 	}
 
-	public void setAggregatedBins(List<AggregatedBin> aggregatedBins) {
-		this.aggregatedBins = aggregatedBins;
+	public void setReference(String reference) {
+		this.reference = reference;
 	}
 
-	public String getName() {
-		return name;
+	public String getReference() {
+		return reference;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setColumn(String column) {
+		this.column = column;
+	}
+
+	public String getColumn() {
+		return column;
+	}
+
+	public void setPopulation(String population) {
+		this.population = population;
+	}
+
+	public String getPopulation() {
+		return population;
 	}
 
 }

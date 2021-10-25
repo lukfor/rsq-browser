@@ -39,7 +39,7 @@ public class QueriesCreateHandler extends AbstractHandler {
 
 		FileUtil.createDirectory(workspace);
 
-		Query query = Query.create(queryId, workspace, configuration.getDatasets().get(0), configuration.getBins());
+		Query query = Query.create(queryId, workspace, configuration.getDatasets(), configuration.getBins());
 		query.setQuery(q);
 
 		jobQueue.submit(query);

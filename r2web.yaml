@@ -1,21 +1,106 @@
 port: 7000
 maxUploadSizeMb: 35
 datasets:
-  - name: Hispanic/Latino
-    filename: /Users/lukfor/Data/r2web/bi.snv.tab.gz
+  - filename: /Users/lukfor/Data/r2web/biome.bi.snv.tab.gz
     subsets:
-      - HC_1kg
-      - HC_hrc
-      - HC_top
-      - OE_1kg
-      - OE_hrc
-      - OE_top
-      - IO_1kg
-      - IO_hrc
-      - IO_top
-      - MG_1kg
-      - MG_hrc
-      - MG_top
+      - column: HC_1kg
+        reference: 1kg
+        chip: HC
+        population: Hispanic/Latino
+      - column: HC_hrc
+        reference: hrc
+        chip: HC
+        population: Hispanic/Latino
+      - column: HC_top
+        reference: top
+        chip: HC
+        population: Hispanic/Latino
+      - column: OE_1kg
+        reference: 1kg
+        chip: OE
+        population: Hispanic/Latino
+      - column: OE_hrc
+        reference: hrc
+        chip: OE
+        population: Hispanic/Latino
+      - column: OE_top
+        reference: top
+        chip: OE
+        population: Hispanic/Latino
+      - column: IO_1kg
+        reference: 1kg
+        chip: IO
+        population: Hispanic/Latino
+      - column: IO_hrc
+        reference: hrc
+        chip: IO
+        population: Hispanic/Latino
+      - column: IO_top
+        reference: top
+        chip: IO
+        population: Hispanic/Latino
+      - column: MG_1kg
+        reference: 1kg
+        chip: MG
+        population: Hispanic/Latino
+      - column: MG_hrc
+        reference: hrc
+        chip: MG
+        population: Hispanic/Latino
+      - column: MG_top
+        reference: top
+        chip: MG
+        population: Hispanic/Latino
+  - filename: /Users/lukfor/Data/r2web/mlof.bi.snv.tab.gz
+    subsets:
+      - column: HC_1kg
+        reference: 1kg
+        chip: HC
+        population: European
+      - column: HC_hrc
+        reference: hrc
+        chip: HC
+        population: European
+      - column: HC_top
+        reference: top
+        chip: HC
+        population: European
+      - column: OE_1kg
+        reference: 1kg
+        chip: OE
+        population: European
+      - column: OE_hrc
+        reference: hrc
+        chip: OE
+        population: European
+      - column: OE_top
+        reference: top
+        chip: OE
+        population: European
+      - column: IO_1kg
+        reference: 1kg
+        chip: IO
+        population: European
+      - column: IO_hrc
+        reference: hrc
+        chip: IO
+        population: European
+      - column: IO_top
+        reference: top
+        chip: IO
+        population: European
+      - column: MG_1kg
+        reference: 1kg
+        chip: MG
+        population: European
+      - column: MG_hrc
+        reference: hrc
+        chip: MG
+        population: European
+      - column: MG_top
+        reference: top
+        chip: MG
+        population: European
 bins:
   - 0.0000
   - 0.0005

@@ -1,5 +1,6 @@
 package genepi.r2web.model;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
@@ -18,7 +19,7 @@ public class Query implements Runnable {
 
 	private String query;
 
-	private int results;
+	private int variants;
 
 	private Date submittedOn;
 
@@ -34,13 +35,17 @@ public class Query implements Runnable {
 
 	private transient String _workspace;
 
-	private Dataset dataset;
-
 	private transient float[] _bins;
-	
-	private transient String[] _names;
 
-	private List<SubDataset> subDatasets = new Vector<SubDataset>();
+	private transient List<Dataset> _datasets;
+
+	private List<Result> results;
+
+	private List<String> populations = null;
+
+	private List<String> chips = null;
+
+	private List<String> references = null;
 
 	public static int EXPIRES_HOURS = 4;
 
@@ -116,40 +121,31 @@ public class Query implements Runnable {
 		return status;
 	}
 
-	public void setResults(int results) {
+	public int getVariants() {
+		return variants;
+	}
+
+	public void set_bins(float[] _bins) {
+		this._bins = _bins;
+	}
+
+	public List<Result> getResults() {
+		return results;
+	}
+
+	public void setResults(List<Result> results) {
 		this.results = results;
 	}
 
-	public int getResults() {
-		return results;
-	}
-	
-	public Dataset getDataset() {
-		return dataset;
-	}
-	
-	public void setDataset(Dataset dataset) {
-		this.dataset = dataset;
-	}
-
-	public List<SubDataset> getSubDatasets() {
-		return subDatasets;
-	}
-
-	public void setSubDatasets(List<SubDataset> subDatasets) {
-		this.subDatasets = subDatasets;
-	}
-
-	public static Query create(String id, String workspace, Dataset dataset, float[] bins) {
+	public static Query create(String id, String workspace, List<Dataset> datasets, float[] bins) {
 		Query query = new Query();
 		query.setId(id);
 		query.setStatus(QueryStatus.SUBMITTED);
 		query.setSubmittedOn(new Date());
 		query.setExpiresOn(new Date(System.currentTimeMillis() + (EXPIRES_HOURS * 60 * 60 * 1000)));
 		query._workspace = workspace;
-		query.dataset = dataset;
+		query._datasets = datasets;
 		query._bins = bins;
-		query._names = dataset.getSubsets();
 		query.save();
 		return query;
 	}
@@ -165,9 +161,9 @@ public class Query implements Runnable {
 
 			GenomicRegion region = GenomicRegion.parse(query);
 
-			ExtractVariantsTask task = new ExtractVariantsTask(_names, _bins);
-			results = task.findVariants(dataset, region);
-			setSubDatasets(task.getSubDatasets());
+			ExtractVariantsTask task = new ExtractVariantsTask(_datasets, _bins);
+			variants = task.findVariants(region);
+			results = task.getResults();
 			long end = System.currentTimeMillis();
 
 			setExecutionTime(end - start);
@@ -184,6 +180,54 @@ public class Query implements Runnable {
 			save();
 
 		}
+	}
+
+	public List<String> getReferences() {
+
+		if (references == null) {
+			references = new Vector<String>();
+			;
+			for (Result result : results) {
+				if (!references.contains(result.getSubDataset().getReference())) {
+					references.add(result.getSubDataset().getReference());
+				}
+			}
+			Collections.sort(references);
+		}
+
+		return references;
+	}
+
+	public List<String> getPopulations() {
+
+		if (populations == null) {
+			populations = new Vector<String>();
+			;
+			for (Result result : results) {
+				if (!populations.contains(result.getSubDataset().getPopulation())) {
+					populations.add(result.getSubDataset().getPopulation());
+				}
+			}
+			Collections.sort(populations);
+		}
+
+		return populations;
+	}
+
+	public List<String> getChips() {
+
+		if (chips == null) {
+			chips = new Vector<String>();
+			;
+			for (Result result : results) {
+				if (!chips.contains(result.getSubDataset().getChip())) {
+					chips.add(result.getSubDataset().getChip());
+				}
+			}
+			Collections.sort(chips);
+		}
+
+		return chips;
 	}
 
 	protected void save() {

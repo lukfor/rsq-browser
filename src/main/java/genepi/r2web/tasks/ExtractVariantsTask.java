@@ -1,11 +1,14 @@
 package genepi.r2web.tasks;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import genepi.r2web.model.AggregatedBin;
 import genepi.r2web.model.Dataset;
+import genepi.r2web.model.Result;
 import genepi.r2web.model.SubDataset;
 import genepi.r2web.util.GenomicRegion;
 import htsjdk.tribble.readers.TabixReader;
@@ -13,21 +16,37 @@ import htsjdk.tribble.readers.TabixReader.Iterator;
 
 public class ExtractVariantsTask {
 
-	private List<SubDataset> subDatasets = new Vector<SubDataset>();
+	private List<Dataset> datasets = new Vector<Dataset>();
+
+	private List<Result> results = new Vector<Result>();
+
+	private Map<SubDataset, Result> index = new HashMap<SubDataset, Result>();
 
 	private float[] bins;
 
-	public ExtractVariantsTask(String[] names, float[] bins) {
+	public ExtractVariantsTask(List<Dataset> datasets, float[] bins) {
 
 		this.bins = bins;
-
-		for (String name : names) {
-			subDatasets.add(new SubDataset(name, bins));
+		this.datasets = datasets;
+		for (Dataset dataset : datasets) {
+			for (SubDataset subDataset : dataset.getSubsets()) {
+				Result result = new Result(subDataset, bins);
+				index.put(subDataset, result);
+				results.add(result);
+			}
 		}
 
 	}
 
-	public int findVariants(Dataset dataset, GenomicRegion location) throws IOException {
+	public int findVariants(GenomicRegion location) throws IOException {
+		int results = 0;
+		for (Dataset dataset : datasets) {
+			results += findVariants(dataset, location);
+		}
+		return results;
+	}
+
+	protected int findVariants(Dataset dataset, GenomicRegion location) throws IOException {
 
 		TabixReader reader = new TabixReader(dataset.getFilename());
 
@@ -37,7 +56,7 @@ public class ExtractVariantsTask {
 		int results = 0;
 		while (line != null) {
 			results++;
-			parseLine(line);
+			parseLine(dataset, line);
 			line = result.next();
 		}
 
@@ -47,7 +66,7 @@ public class ExtractVariantsTask {
 
 	}
 
-	protected void parseLine(String line) {
+	protected void parseLine(Dataset dataset, String line) {
 
 		String[] tiles = line.split("\t");
 
@@ -58,8 +77,8 @@ public class ExtractVariantsTask {
 		int subset = 0;
 
 		for (int i = 5; i < tiles.length; i += 2) {
-
-			AggregatedBin bin = subDatasets.get(subset).getAggregatedBins().get(binIndex);
+			SubDataset subDataset = dataset.getSubsets().get(subset);
+			AggregatedBin bin = index.get(subDataset).getAggregatedBins().get(binIndex);
 
 			if (!tiles[i].equals("NA")) {
 				double value = Double.parseDouble(tiles[i]);
@@ -85,8 +104,8 @@ public class ExtractVariantsTask {
 		return -1;
 	}
 
-	public List<SubDataset> getSubDatasets() {
-		return subDatasets;
+	public List<Result> getResults() {
+		return results;
 	}
 
 }

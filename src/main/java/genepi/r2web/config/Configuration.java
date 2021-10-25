@@ -11,6 +11,7 @@ import com.esotericsoftware.yamlbeans.YamlReader;
 
 import genepi.r2web.App;
 import genepi.r2web.model.Dataset;
+import genepi.r2web.model.SubDataset;
 
 public class Configuration {
 
@@ -25,7 +26,7 @@ public class Configuration {
 	private int threads = 2;
 
 	private List<Dataset> datasets = new Vector<Dataset>();
-	
+
 	private float[] bins = new float[0];
 
 	public Configuration() {
@@ -79,11 +80,11 @@ public class Configuration {
 	public List<Dataset> getDatasets() {
 		return datasets;
 	}
-	
+
 	public void setBins(float[] bins) {
 		this.bins = bins;
 	}
-	
+
 	public float[] getBins() {
 		return bins;
 	}
@@ -92,9 +93,10 @@ public class Configuration {
 
 		YamlReader reader = new YamlReader(new FileReader(file));
 		reader.getConfig().setPropertyElementType(Configuration.class, "datasets", Dataset.class);
-	
+		reader.getConfig().setPropertyElementType(Dataset.class, "subsets", SubDataset.class);
+
 		Configuration configuration = reader.read(Configuration.class);
-		
+
 		return configuration;
 
 	}
