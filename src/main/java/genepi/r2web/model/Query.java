@@ -1,6 +1,8 @@
 package genepi.r2web.model;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Vector;
 
 import com.google.gson.Gson;
 
@@ -32,7 +34,13 @@ public class Query implements Runnable {
 
 	private transient String _workspace;
 
-	private transient Dataset _dataset;
+	private Dataset dataset;
+
+	private transient float[] _bins;
+	
+	private transient String[] _names;
+
+	private List<SubDataset> subDatasets = new Vector<SubDataset>();
 
 	public static int EXPIRES_HOURS = 4;
 
@@ -115,15 +123,33 @@ public class Query implements Runnable {
 	public int getResults() {
 		return results;
 	}
+	
+	public Dataset getDataset() {
+		return dataset;
+	}
+	
+	public void setDataset(Dataset dataset) {
+		this.dataset = dataset;
+	}
 
-	public static Query create(String id, String workspace, Dataset dataset) {
+	public List<SubDataset> getSubDatasets() {
+		return subDatasets;
+	}
+
+	public void setSubDatasets(List<SubDataset> subDatasets) {
+		this.subDatasets = subDatasets;
+	}
+
+	public static Query create(String id, String workspace, Dataset dataset, float[] bins) {
 		Query query = new Query();
 		query.setId(id);
 		query.setStatus(QueryStatus.SUBMITTED);
 		query.setSubmittedOn(new Date());
 		query.setExpiresOn(new Date(System.currentTimeMillis() + (EXPIRES_HOURS * 60 * 60 * 1000)));
 		query._workspace = workspace;
-		query._dataset = dataset;
+		query.dataset = dataset;
+		query._bins = bins;
+		query._names = dataset.getSubsets();
 		query.save();
 		return query;
 	}
@@ -139,9 +165,9 @@ public class Query implements Runnable {
 
 			GenomicRegion region = GenomicRegion.parse(query);
 
-			ExtractVariantsTask task = new ExtractVariantsTask();
-			results = task.findVariants(_dataset, region);
-
+			ExtractVariantsTask task = new ExtractVariantsTask(_names, _bins);
+			results = task.findVariants(dataset, region);
+			setSubDatasets(task.getSubDatasets());
 			long end = System.currentTimeMillis();
 
 			setExecutionTime(end - start);
@@ -150,7 +176,7 @@ public class Query implements Runnable {
 			save();
 
 		} catch (Exception e) {
-
+			e.printStackTrace();
 			setExecutionTime(0);
 			setFinisehdOn(new Date());
 			setStatus(QueryStatus.FAILED);

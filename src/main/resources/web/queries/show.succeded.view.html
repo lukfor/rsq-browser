@@ -3,10 +3,19 @@
 
 <div id="page-content">
 
-  <h1>{{query.query}}</h1>
+  <h2>{{query.query}}</h2>
 
   Found <b>{{decimal(query.results)}}</b> variants ({{query.executionTime / 1000.0}} seconds)
+
+  <h3>{{query.dataset.name}}</h3>
+
+  <div id="plot"></div>
+
 </div>
+
+<pre>
+
+</pre>
 
 <script>
 {{include "show.succeded.view.js"}}

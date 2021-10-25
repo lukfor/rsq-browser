@@ -25,6 +25,8 @@ public class Configuration {
 	private int threads = 2;
 
 	private List<Dataset> datasets = new Vector<Dataset>();
+	
+	private float[] bins = new float[0];
 
 	public Configuration() {
 
@@ -76,6 +78,14 @@ public class Configuration {
 
 	public List<Dataset> getDatasets() {
 		return datasets;
+	}
+	
+	public void setBins(float[] bins) {
+		this.bins = bins;
+	}
+	
+	public float[] getBins() {
+		return bins;
 	}
 
 	public static Configuration loadFromFile(File file, String parent) throws YamlException, FileNotFoundException {

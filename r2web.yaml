@@ -3,3 +3,32 @@ maxUploadSizeMb: 35
 datasets:
   - name: Hispanic/Latino
     filename: /Users/lukfor/Data/r2web/bi.snv.tab.gz
+    subsets:
+      - HC_1kg
+      - HC_hrc
+      - HC_top
+      - OE_1kg
+      - OE_hrc
+      - OE_top
+      - IO_1kg
+      - IO_hrc
+      - IO_top
+      - MG_1kg
+      - MG_hrc
+      - MG_top
+bins:
+  - 0.0000
+  - 0.0005
+  - 0.001
+  - 0.002
+  - 0.005
+  - 0.010
+  - 0.015
+  - 0.020
+  - 0.035
+  - 0.050
+  - 0.100
+  - 0.200
+  - 0.300
+  - 0.400
+  - 0.500

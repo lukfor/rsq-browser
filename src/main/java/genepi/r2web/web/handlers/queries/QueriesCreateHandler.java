@@ -38,8 +38,8 @@ public class QueriesCreateHandler extends AbstractHandler {
 		String queryId = RandomStringUtils.randomAlphanumeric(configuration.getJobIdLength());
 
 		FileUtil.createDirectory(workspace);
-		
-		Query query = Query.create(queryId, workspace, configuration.getDatasets().get(0));
+
+		Query query = Query.create(queryId, workspace, configuration.getDatasets().get(0), configuration.getBins());
 		query.setQuery(q);
 
 		jobQueue.submit(query);
