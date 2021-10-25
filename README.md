@@ -1,4 +1,4 @@
-[![Java CI with Maven](https://github.com/genepi/covidgrep/actions/workflows/maven.yml/badge.svg)](https://github.com/genepi/covidgrep/actions/workflows/maven.yml)
+[![Java CI with Maven](https://github.com/lukfor/r2web/actions/workflows/maven.yml/badge.svg)](https://github.com/lukfor/r2web/actions/workflows/maven.yml)
 
 # r2web
 
