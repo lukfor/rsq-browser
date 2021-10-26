@@ -20,6 +20,7 @@ public class IndexPageHandler extends AbstractHandler {
 	public void handle(Context context) throws Exception {
 
 		Page page = new Page(context, TEMPLATE);
+		page.put("configuration", configuration);
 		page.render();
 
 	}
