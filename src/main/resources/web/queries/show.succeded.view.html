@@ -10,24 +10,24 @@
 Population:
   <select id="population" class="filter">
     <option value="">All</option>
-    {{for population in query.getPopulations()}}
-    <option value="{{population}}">{{population}}</option>
+    {{for population in configuration.getPopulations()}}
+    <option value="{{population.id}}">{{population.label}}</option>
     {{end}}
   </select>
 &nbsp;&nbsp;&nbsp;
 Genotyping Array:
   <select id="chip" class="filter">
     <option value="">All</option>
-    {{for chip in query.getChips()}}
-    <option value="{{chip}}">{{chip}}</option>
+    {{for chip in configuration.getChips()}}
+    <option value="{{chip.id}}">{{chip.label}}</option>
     {{end}}
   </select>
 &nbsp;&nbsp;&nbsp;
 Reference Panel:
   <select id="reference" class="filter">
     <option value="">All</option>
-    {{for reference in query.getReferences()}}
-    <option value="{{reference}}">{{reference}}</option>
+    {{for reference in configuration.getReferences()}}
+    <option value="{{reference.id}}">{{reference.label}}</option>
     {{end}}
   </select>
 

@@ -10,6 +10,8 @@ public class SubDataset {
 
 	private String chip;
 
+	private String name;
+
 	public void setChip(String chip) {
 		this.chip = chip;
 	}
@@ -40,6 +42,14 @@ public class SubDataset {
 
 	public String getPopulation() {
 		return population;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 }

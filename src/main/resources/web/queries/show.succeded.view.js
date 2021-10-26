@@ -32,7 +32,7 @@ function createTrace(data, index, filter) {
     x: x,
     y: y,
     type: 'scatter',
-    name: data.subDataset.population + ' - ' + data.subDataset.chip + ' (' + data.subDataset.reference + ')',
+    name: data.subDataset.name + ')',
     line: {
       width: 1.25,
       color: d3colors(index)
@@ -61,7 +61,8 @@ function updatePlot(data, filter) {
       title: "mean(R2)",
       range: [0, 1]
     },
-    hovermode: false
+    hovermode: false,
+    legend: {"orientation": "h"}
   };
 
   Plotly.newPlot('plot', traces, layout);
