@@ -1,11 +1,5 @@
 package genepi.r2web.web.handlers.queries;
 
-import java.io.File;
-import java.io.FileReader;
-
-import com.google.gson.Gson;
-
-import genepi.io.FileUtil;
 import genepi.r2web.App;
 import genepi.r2web.config.Configuration;
 import genepi.r2web.model.Query;
@@ -28,14 +22,9 @@ public class QueriesShowHandler extends AbstractHandler {
 
 		String queryId = context.pathParam("query");
 
-		String filename = FileUtil.path(workspace, queryId + ".json");
-		File jobFile = new File(filename);
+		Query query = Query.findById(queryId, workspace);
 
-		if (jobFile.exists()) {
-
-			Gson gson = new Gson();
-
-			Query query = gson.fromJson(new FileReader(jobFile), Query.class);
+		if (query != null) {
 
 			String template = "web/queries/show." + query.getStatus().name().toLowerCase() + ".view.html";
 
@@ -44,7 +33,7 @@ public class QueriesShowHandler extends AbstractHandler {
 			page.render();
 
 		} else {
-			throw new Exception("Job not found.");
+			throw new Exception("Query not found.");
 		}
 
 	}

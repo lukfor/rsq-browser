@@ -23,6 +23,8 @@ public class Configuration {
 
 	private int jobIdLength = 50;
 
+	private boolean caching = false;
+
 	private int threads = 2;
 
 	private List<Dataset> datasets = new Vector<Dataset>();
@@ -87,6 +89,14 @@ public class Configuration {
 
 	public float[] getBins() {
 		return bins;
+	}
+
+	public void setCaching(boolean caching) {
+		this.caching = caching;
+	}
+
+	public boolean isCaching() {
+		return caching;
 	}
 
 	public static Configuration loadFromFile(File file, String parent) throws YamlException, FileNotFoundException {

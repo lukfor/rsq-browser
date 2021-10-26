@@ -1,11 +1,16 @@
 package genepi.r2web.model;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 import genepi.io.FileUtil;
 import genepi.r2web.tasks.ExtractVariantsTask;
@@ -14,8 +19,6 @@ import genepi.r2web.util.GenomicRegion;
 public class Query implements Runnable {
 
 	private String id;
-
-	private String hash;
 
 	private String query;
 
@@ -55,14 +58,6 @@ public class Query implements Runnable {
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getHash() {
-		return hash;
-	}
-
-	public void setHash(String hash) {
-		this.hash = hash;
 	}
 
 	public Date getSubmittedOn() {
@@ -148,6 +143,19 @@ public class Query implements Runnable {
 		query._bins = bins;
 		query.save();
 		return query;
+	}
+
+	public static Query findById(String id, String workspace)
+			throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+		String filename = FileUtil.path(workspace, id + ".json");
+		File jobFile = new File(filename);
+
+		if (jobFile.exists()) {
+			Gson gson = new Gson();
+			return gson.fromJson(new FileReader(jobFile), Query.class);
+		} else {
+			return null;
+		}
 	}
 
 	public void run() {
