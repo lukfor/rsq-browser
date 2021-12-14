@@ -73,6 +73,9 @@ public class ExtractVariantsTask {
 		double af = Double.parseDouble(tiles[4]);
 
 		int binIndex = getBinByAf(af);
+		if (binIndex == -1) {
+			binIndex = 0;
+		}
 
 		int subset = 0;
 

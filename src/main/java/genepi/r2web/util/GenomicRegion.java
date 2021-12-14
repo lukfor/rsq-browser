@@ -80,6 +80,15 @@ public class GenomicRegion {
 			}
 
 		}
+		
+		// check if chr
+		if (string.startsWith("chr")) {
+			GenomicRegion location = new GenomicRegion();
+			location.chromosome = string;
+			location.start = 1;
+			location.end = Integer.MAX_VALUE;
+			return location;
+		}
 
 		// TODO: check if gene
 

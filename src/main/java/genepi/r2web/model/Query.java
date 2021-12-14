@@ -124,36 +124,10 @@ public class Query implements Runnable {
 		this.results = results;
 	}
 
-	public static Query create(String id, String workspace, List<Dataset> datasets, float[] bins) {
-		Query query = new Query();
-		query.setId(id);
-		query.setStatus(QueryStatus.SUBMITTED);
-		query.setSubmittedOn(new Date());
-		query.setExpiresOn(new Date(System.currentTimeMillis() + (EXPIRES_HOURS * 60 * 60 * 1000)));
-		query._workspace = workspace;
-		query._datasets = datasets;
-		query._bins = bins;
-		query.save();
-		return query;
-	}
-
-	public static Query findById(String id, String workspace)
-			throws JsonSyntaxException, JsonIOException, FileNotFoundException {
-		String filename = FileUtil.path(workspace, id + ".json");
-		File jobFile = new File(filename);
-
-		if (jobFile.exists()) {
-			Gson gson = new Gson();
-			return gson.fromJson(new FileReader(jobFile), Query.class);
-		} else {
-			return null;
-		}
-	}
-
 	public void run() {
 
 		setStatus(QueryStatus.RUNNING);
-		save();
+		Query.save(this, _workspace);
 
 		try {
 
@@ -169,7 +143,7 @@ public class Query implements Runnable {
 			setExecutionTime(end - start);
 			setFinisehdOn(new Date());
 			setStatus(QueryStatus.SUCCEDED);
-			save();
+			Query.save(this, _workspace);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -177,15 +151,41 @@ public class Query implements Runnable {
 			setFinisehdOn(new Date());
 			setStatus(QueryStatus.FAILED);
 			setError(e.getMessage());
-			save();
+			Query.save(this, _workspace);
 
 		}
 	}
 
-	protected void save() {
-		String jobFilename = FileUtil.path(_workspace, getId() + ".json");
+	public static synchronized void save(Query query, String workspace) {
+		String jobFilename = FileUtil.path(workspace, query.getId() + ".json");
 		Gson gson = new Gson();
-		FileUtil.writeStringBufferToFile(jobFilename, new StringBuffer(gson.toJson(this)));
+		FileUtil.writeStringBufferToFile(jobFilename, new StringBuffer(gson.toJson(query)));
+	}
+
+	public synchronized static Query create(String id, String workspace, List<Dataset> datasets, float[] bins) {
+		Query query = new Query();
+		query.setId(id);
+		query.setStatus(QueryStatus.SUBMITTED);
+		query.setSubmittedOn(new Date());
+		query.setExpiresOn(new Date(System.currentTimeMillis() + (EXPIRES_HOURS * 60 * 60 * 1000)));
+		query._workspace = workspace;
+		query._datasets = datasets;
+		query._bins = bins;
+		Query.save(query, workspace);
+		return query;
+	}
+
+	public synchronized static Query findById(String id, String workspace)
+			throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+		String filename = FileUtil.path(workspace, id + ".json");
+		File jobFile = new File(filename);
+
+		if (jobFile.exists()) {
+			Gson gson = new Gson();
+			return gson.fromJson(new FileReader(jobFile), Query.class);
+		} else {
+			return null;
+		}
 	}
 
 }

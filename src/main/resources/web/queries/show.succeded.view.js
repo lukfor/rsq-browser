@@ -1,4 +1,6 @@
-var d3colors = Plotly.d3.scale.category10();
+var colors = Plotly.d3.scale.category10();
+var styles = Plotly.d3.scale.ordinal().range(["dash", "dot", "dashdot", "longdash", "longdashdot", "solid"]);
+var symbols = Plotly.d3.scale.ordinal().range(["circle-open", "square-open", "x","triangle-left-open-dot" ]);
 
 function createTrace(data, index, filter) {
 
@@ -35,7 +37,11 @@ function createTrace(data, index, filter) {
     name: data.subDataset.name + ')',
     line: {
       width: 1.25,
-      color: d3colors(index)
+      color: colors(data.subDataset.reference),
+      dash: styles(data.subDataset.population)
+    },
+    marker: {
+      symbol: symbols(data.subDataset.chip)
     }
   };
 
@@ -55,13 +61,12 @@ function updatePlot(data, filter) {
     xaxis: {
       type: 'log',
       autorange: true,
-      title: "MAF"
+      title: "Minor Allele Frequency (MAF)"
     },
     yaxis: {
-      title: "mean(R2)",
+      title: "Average Imputation Quality",
       range: [0, 1]
     },
-    hovermode: false,
     legend: {"orientation": "h"}
   };
 
