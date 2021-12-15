@@ -1,7 +1,8 @@
 [![Java CI with Maven](https://github.com/lukfor/r2web/actions/workflows/maven.yml/badge.svg)](https://github.com/lukfor/r2web/actions/workflows/maven.yml)
 
-# r2web
+# rsq-browser
 
+A web-application to search and compare imputation qualities among different populations, genotyping arrays and reference panels.
 
 ## Requirements
 
