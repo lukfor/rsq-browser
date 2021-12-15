@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>genepi</groupId>
-	<artifactId>r2web</artifactId>
+	<artifactId>rsq-browser</artifactId>
 	<version>0.1.0</version>
 	<packaging>jar</packaging>
 
-	<name>R2-Webtool</name>
+	<name>rsq-browser</name>
 	<description></description>
 
 	<licenses>
@@ -131,7 +131,7 @@
 							<transformers>
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>genepi.r2web.App</mainClass>
+									<mainClass>genepi.r2browser.App</mainClass>
 								</transformer>
 							</transformers>
 							<filters>

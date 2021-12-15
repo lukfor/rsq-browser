@@ -1,0 +1,249 @@
+port: 7000
+maxUploadSizeMb: 35
+caching: false
+
+populations:
+  - id: "his/lat"
+    label: "Hispanic/Latino"
+  - id: "eur"
+    label: "European"
+  - id: "fin"
+    label: "Finnish"
+  - id: "afr"
+    label: "African"
+
+references:
+  - id: "1kg"
+    label: "1000 Genomes"
+  - id: "hrc"
+    label: "HRC"
+  - id: "top"
+    label: "TOPMed"
+
+chips:
+  - id: "HC"
+    label: "Core"
+  - id: "OE"
+    label: "OmniExpress"
+  - id: "IO"
+    label : "Omni 2.5M"
+  - id: "MG"
+    label : "MEGA"
+
+datasets:
+  - filename: /Users/lukfor/Data/r2web/data/biome.bi.snv.tab.gz
+    subsets:
+      - column: HC_1kg
+        reference: 1kg
+        chip: HC
+        population: his/lat
+      - column: HC_hrc
+        reference: hrc
+        chip: HC
+        population: his/lat
+      - column: HC_top
+        reference: top
+        chip: HC
+        population: his/lat
+      - column: OE_1kg
+        reference: 1kg
+        chip: OE
+        population: his/lat
+      - column: OE_hrc
+        reference: hrc
+        chip: OE
+        population: his/lat
+      - column: OE_top
+        reference: top
+        chip: OE
+        population: his/lat
+      - column: IO_1kg
+        reference: 1kg
+        chip: IO
+        population: his/lat
+      - column: IO_hrc
+        reference: hrc
+        chip: IO
+        population: his/lat
+      - column: IO_top
+        reference: top
+        chip: IO
+        population: his/lat
+      - column: MG_1kg
+        reference: 1kg
+        chip: MG
+        population: his/lat
+      - column: MG_hrc
+        reference: hrc
+        chip: MG
+        population: his/lat
+      - column: MG_top
+        reference: top
+        chip: MG
+        population: his/lat
+  - filename: /Users/lukfor/Data/r2web/data/mlof.bi.snv.tab.gz
+    subsets:
+      - column: HC_1kg
+        reference: 1kg
+        chip: HC
+        population: eur
+      - column: HC_hrc
+        reference: hrc
+        chip: HC
+        population: eur
+      - column: HC_top
+        reference: top
+        chip: HC
+        population: eur
+      - column: OE_1kg
+        reference: 1kg
+        chip: OE
+        population: eur
+      - column: OE_hrc
+        reference: hrc
+        chip: OE
+        population: eur
+      - column: OE_top
+        reference: top
+        chip: OE
+        population: eur
+      - column: IO_1kg
+        reference: 1kg
+        chip: IO
+        population: eur
+      - column: IO_hrc
+        reference: hrc
+        chip: IO
+        population: eur
+      - column: IO_top
+        reference: top
+        chip: IO
+        population: eur
+      - column: MG_1kg
+        reference: 1kg
+        chip: MG
+        population: eur
+      - column: MG_hrc
+        reference: hrc
+        chip: MG
+        population: eur
+      - column: MG_top
+        reference: top
+        chip: MG
+        population: eur
+  - filename: /Users/lukfor/Data/r2web/data/metsim.bi.snv.tab.gz
+    subsets:
+      - column: HC_1kg
+        reference: 1kg
+        chip: HC
+        population: fin
+      - column: HC_hrc
+        reference: hrc
+        chip: HC
+        population: fin
+      - column: HC_top
+        reference: top
+        chip: HC
+        population: fin
+      - column: OE_1kg
+        reference: 1kg
+        chip: OE
+        population: fin
+      - column: OE_hrc
+        reference: hrc
+        chip: OE
+        population: fin
+      - column: OE_top
+        reference: top
+        chip: OE
+        population: fin
+      - column: IO_1kg
+        reference: 1kg
+        chip: IO
+        population: fin
+      - column: IO_hrc
+        reference: hrc
+        chip: IO
+        population: fin
+      - column: IO_top
+        reference: top
+        chip: IO
+        population: fin
+      - column: MG_1kg
+        reference: 1kg
+        chip: MG
+        population: fin
+      - column: MG_hrc
+        reference: hrc
+        chip: MG
+        population: fin
+      - column: MG_top
+        reference: top
+        chip: MG
+        population: fin
+  - filename: /Users/lukfor/Data/r2web/data/inpsyght.bi.snv.tab.gz
+    subsets:
+      - column: HC_1kg
+        reference: 1kg
+        chip: HC
+        population: afr
+      - column: HC_hrc
+        reference: hrc
+        chip: HC
+        population: afr
+      - column: HC_top
+        reference: top
+        chip: HC
+        population: afr
+      - column: OE_1kg
+        reference: 1kg
+        chip: OE
+        population: afr
+      - column: OE_hrc
+        reference: hrc
+        chip: OE
+        population: afr
+      - column: OE_top
+        reference: top
+        chip: OE
+        population: afr
+      - column: IO_1kg
+        reference: 1kg
+        chip: IO
+        population: afr
+      - column: IO_hrc
+        reference: hrc
+        chip: IO
+        population: afr
+      - column: IO_top
+        reference: top
+        chip: IO
+        population: afr
+      - column: MG_1kg
+        reference: 1kg
+        chip: MG
+        population: afr
+      - column: MG_hrc
+        reference: hrc
+        chip: MG
+        population: afr
+      - column: MG_top
+        reference: top
+        chip: MG
+        population: afr
+bins:
+  - 0.0000
+  - 0.0005
+  - 0.001
+  - 0.002
+  - 0.005
+  - 0.010
+  - 0.015
+  - 0.020
+  - 0.035
+  - 0.050
+  - 0.100
+  - 0.200
+  - 0.300
+  - 0.400
+  - 0.500
