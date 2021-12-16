@@ -2,12 +2,15 @@ package genepi.r2browser.web.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import genepi.r2browser.App;
+import genepi.r2browser.config.Configuration;
 import genepi.r2browser.web.handlers.ErrorHandler;
 import io.javalin.Javalin;
 import io.javalin.http.ExceptionHandler;
 import io.javalin.http.staticfiles.Location;
+import io.javalin.http.staticfiles.StaticFileConfig;
 import io.javalin.plugin.rendering.JavalinRenderer;
 
 public abstract class AbstractWebApp {
@@ -33,16 +36,31 @@ public abstract class AbstractWebApp {
 		routes();
 
 		if (App.isDevelopmentSystem()) {
-
+			
 			// load templates and static files from external files not from classpath
 			// auto reloading possible, no restart needed, ....
-			server._conf.addStaticFiles("src/main/resources" + ROOT_DIR, Location.EXTERNAL);
+			server._conf.addStaticFiles(new Consumer<StaticFileConfig>() {
+				
+				@Override
+				public void accept(StaticFileConfig config) {
+					config.hostedPath = App.getDefault().getConfiguration().getBaseUrl();
+					config.directory = "src/main/resources" + ROOT_DIR;
+					config.location = Location.EXTERNAL;
+				}
+			});
 			JavalinRenderer.register(new BasisTemplateFileRenderer("src/main/resources", Location.EXTERNAL, this),
 					VIEW_EXTENSION);
 
 		} else {
-
-			server._conf.addStaticFiles(ROOT_DIR, Location.CLASSPATH);
+			server._conf.addStaticFiles(new Consumer<StaticFileConfig>() {
+				
+				@Override
+				public void accept(StaticFileConfig config) {
+					config.hostedPath =  App.getDefault().getConfiguration().getBaseUrl();
+					config.directory = ROOT_DIR;
+					config.location = Location.CLASSPATH;
+				}
+			});
 			JavalinRenderer.register(new BasisTemplateFileRenderer("", Location.CLASSPATH, this), VIEW_EXTENSION);
 
 		}
