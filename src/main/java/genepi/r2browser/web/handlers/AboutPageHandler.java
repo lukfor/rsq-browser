@@ -5,13 +5,13 @@ import genepi.r2browser.web.util.Page;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
 
-public class ContactPageHandler extends AbstractHandler {
+public class AboutPageHandler extends AbstractHandler {
 
-	public static final String PATH = "/contact";
+	public static final String PATH = "/about";
 
 	public static final HandlerType TYPE = HandlerType.GET;
 
-	public static final String TEMPLATE = "web/contact.view.html";
+	public static final String TEMPLATE = "web/about.view.html";
 
 	public void handle(Context context) throws Exception {
 
