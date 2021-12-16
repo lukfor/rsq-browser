@@ -1,5 +1,7 @@
 package genepi.r2browser.web.handlers;
 
+import genepi.r2browser.App;
+import genepi.r2browser.config.Configuration;
 import genepi.r2browser.web.util.AbstractHandler;
 import genepi.r2browser.web.util.Page;
 import io.javalin.http.Context;
@@ -13,6 +15,8 @@ public class AboutPageHandler extends AbstractHandler {
 
 	public static final String TEMPLATE = "web/about.view.html";
 
+	private Configuration configuration = App.getDefault().getConfiguration();
+	
 	public void handle(Context context) throws Exception {
 
 		Page page = new Page(context, TEMPLATE);
@@ -22,7 +26,7 @@ public class AboutPageHandler extends AbstractHandler {
 
 	@Override
 	public String getPath() {
-		return PATH;
+		return configuration.getBaseUrl() + PATH;
 	}
 
 	@Override

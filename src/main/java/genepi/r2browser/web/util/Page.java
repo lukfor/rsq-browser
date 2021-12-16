@@ -17,13 +17,14 @@ public class Page extends HashMap<String, Object> {
 
 		this.context = context;
 		this.template = template;
-		
+
 		put("application", App.NAME);
 		put("version", App.VERSION);
+		put("baseUrl", App.getDefault().getConfiguration().getBaseUrl());
 		put("debug", App.isDevelopmentSystem());
 
 	}
-	
+
 	public void render() {
 		context.render(template, this);
 	}
