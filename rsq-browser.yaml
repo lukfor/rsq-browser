@@ -1,16 +1,18 @@
 port: 7000
 maxUploadSizeMb: 35
 caching: false
+baseUrl: /rsq-browser
 
 populations:
-  - id: "his/lat"
-    label: "Hispanic/Latino"
-  - id: "eur"
-    label: "European"
-  - id: "fin"
-    label: "Finnish"
   - id: "afr"
     label: "African"
+  - id: "eur"
+    label: "European"
+    selected: true
+  - id: "fin"
+    label: "Finnish"
+  - id: "his/lat"
+    label: "Hispanic/Latino"
 
 references:
   - id: "1kg"
@@ -27,6 +29,7 @@ chips:
     label: "OmniExpress"
   - id: "IO"
     label : "Omni 2.5M"
+    selected: true
   - id: "MG"
     label : "MEGA"
 

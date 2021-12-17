@@ -36,11 +36,12 @@ function createTrace(data, index, filter) {
     type: 'scatter',
     name: data.subDataset.name + ')',
     line: {
-      width: 1.25,
+      width: 2,
       color: colors(data.subDataset.reference),
       dash: styles(data.subDataset.population)
     },
     marker: {
+      width: 2,
       symbol: symbols(data.subDataset.chip)
     }
   };
@@ -67,10 +68,21 @@ function updatePlot(data, filter) {
       title: "Average Imputation Quality",
       range: [0, 1]
     },
-    legend: {"orientation": "h"}
+    //legend: {"orientation": "h"},
+    margin: {
+     l: 50,
+     r: 50,
+     b: 50,
+     t: 30,
+     pad: 4
+   }
   };
 
-  Plotly.newPlot('plot', traces, layout);
+  var config = {
+      displayModeBar: false
+  }
+
+  Plotly.newPlot('plot', traces, layout, config);
 }
 
 $(".filter").change(function(){

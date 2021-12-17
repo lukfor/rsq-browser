@@ -33,14 +33,12 @@ Reference Panel:
 
   <div id="plot"></div>
 
-<p class="text-muted">
-  Analyzed <b>{{decimal(query.variants)}}</b> variants ({{query.executionTime / 1000.0}} seconds)
-</p>
+  <p class="text-muted mt-5">
+    <small>Analyzed <b>{{decimal(query.variants)}}</b> variants ({{query.executionTime / 1000.0}} seconds)</small>
+  </p>
+  
 </div>
 
-<pre>
-
-</pre>
 
 <script>
 {{include "show.succeded.view.js"}}
