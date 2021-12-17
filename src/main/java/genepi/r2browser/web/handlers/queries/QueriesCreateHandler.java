@@ -38,7 +38,7 @@ public class QueriesCreateHandler extends AbstractHandler {
 
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("query", query.getId());
-		String path = RouteUtil.path(QueriesShowHandler.PATH, params);
+		String path = RouteUtil.path(configuration.getBaseUrl() + QueriesShowHandler.PATH, params);
 
 		context.redirect(path);
 
