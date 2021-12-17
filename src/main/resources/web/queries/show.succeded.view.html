@@ -11,7 +11,7 @@ Population:
   <select id="population" class="filter">
     <option value="">All</option>
     {{for population in configuration.getPopulations()}}
-    <option value="{{population.id}}">{{population.label}}</option>
+    <option value="{{population.id}}" {{population.selected ? "selected" : ""}}>{{population.label}}</option>
     {{end}}
   </select>
 &nbsp;&nbsp;&nbsp;
@@ -19,7 +19,7 @@ Genotyping Array:
   <select id="chip" class="filter">
     <option value="">All</option>
     {{for chip in configuration.getChips()}}
-    <option value="{{chip.id}}">{{chip.label}}</option>
+    <option value="{{chip.id}}" {{chip.selected ? "selected" : ""}}>{{chip.label}}</option>
     {{end}}
   </select>
 &nbsp;&nbsp;&nbsp;
@@ -27,7 +27,7 @@ Reference Panel:
   <select id="reference" class="filter">
     <option value="">All</option>
     {{for reference in configuration.getReferences()}}
-    <option value="{{reference.id}}">{{reference.label}}</option>
+    <option value="{{reference.id}}" {{reference.selected ? "selected" : ""}}>{{reference.label}}</option>
     {{end}}
   </select>
 

@@ -83,4 +83,9 @@ $(".filter").change(function(){
 });
 
 var data = {{ json(query.getResults()) }};
-updatePlot(data, {});
+var filter = {
+  population: $("#population").val(),
+  reference: $("#reference").val(),
+  chip: $("#chip").val()
+}
+updatePlot(data, filter);
