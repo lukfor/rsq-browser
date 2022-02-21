@@ -39,7 +39,9 @@ public class Configuration {
 	private float[] bins = new float[0];
 
 	private String baseUrl = "";
-	
+
+	private String dbSnpIndex;
+
 	public Configuration() {
 
 	}
@@ -143,13 +145,21 @@ public class Configuration {
 	public String getReferenceLabel(String id) {
 		return getLabel(references, id);
 	}
-	
+
 	public void setBaseUrl(String baseUrl) {
 		this.baseUrl = baseUrl;
 	}
-	
+
 	public String getBaseUrl() {
 		return baseUrl;
+	}
+
+	public String getDbSnpIndex() {
+		return dbSnpIndex;
+	}
+
+	public void setDbSnpIndex(String dbSnpIndex) {
+		this.dbSnpIndex = dbSnpIndex;
 	}
 
 	public String getLabel(List<IdLabel> labels, String id) {

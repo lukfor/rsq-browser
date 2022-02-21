@@ -2,6 +2,10 @@ package genepi.r2browser.util;
 
 import java.io.IOException;
 
+import genepi.r2browser.App;
+import genepi.r2browser.config.Configuration;
+import genepi.r2browser.util.DbSnpReader.Snp;
+
 public class GenomicRegion {
 
 	private String chromosome;
@@ -37,8 +41,27 @@ public class GenomicRegion {
 	public static GenomicRegion parse(String string) throws IOException {
 
 		if (string.startsWith("rs")) {
-			// TODO: convert rsId to position. needs build.
-			throw new IOException("RsIDs no yet supported.");
+
+			Configuration configuration = App.getDefault().getConfiguration();
+
+			String dbsnpIndex = configuration.getDbSnpIndex();
+
+			if (dbsnpIndex == null) {
+				throw new IOException("RsIDs no supported. No dbSNP Index file set.");
+			}
+
+			DbSnpReader dbsnp = new DbSnpReader(dbsnpIndex);
+			Snp snp = dbsnp.getByRsId(string);
+			if (snp == null) {
+				throw new IOException("SNP '" + string + "' not found.");
+			}
+
+			GenomicRegion location = new GenomicRegion();
+			location.chromosome = snp.getChromosome();
+			location.start = (int) snp.getPosition();
+			location.end = (int) snp.getPosition();
+			return location;
+
 		}
 
 		// bed
@@ -80,7 +103,7 @@ public class GenomicRegion {
 			}
 
 		}
-		
+
 		// check if chr
 		if (string.startsWith("chr")) {
 			GenomicRegion location = new GenomicRegion();
