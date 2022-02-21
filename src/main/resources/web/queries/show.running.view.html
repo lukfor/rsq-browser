@@ -4,7 +4,8 @@
 <div id="page-content" class="text-center">
   <p class="mt-8"> <i class="fas fa-circle-notch fa-spin"></i> Searching data...</p>
 </div>
-<script>
+<script type="module">
+  import Turbolinks from "turbolinks";
   setTimeout(function() {
     Turbolinks.visit(window.location);
   }, 2000);

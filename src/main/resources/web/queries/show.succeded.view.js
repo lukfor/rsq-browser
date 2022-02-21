@@ -1,6 +1,22 @@
-var colors = Plotly.d3.scale.category10();
-var styles = Plotly.d3.scale.ordinal().range(["dash", "dot", "dashdot", "longdash", "longdashdot", "solid"]);
-var symbols = Plotly.d3.scale.ordinal().range(["circle-open", "square-open", "x","triangle-left-open-dot" ]);
+import $ from "jquery"
+import Plotly from "plotly";
+
+var colors = [
+  '#1f77b4',
+  '#ff7f0e',
+  '#2ca02c',
+  '#d62728',
+  '#9467bd',
+  '#8c564b',
+  '#e377c2',
+  '#7f7f7f',
+  '#bcbd22',
+  '#17becf'
+];
+
+
+//var styles = d3Scale.ordinal().range(["dash", "dot", "dashdot", "longdash", "longdashdot", "solid"]);
+//var symbols = d3Scale.ordinal().range(["circle-open", "square-open", "x","triangle-left-open-dot" ]);
 
 function createTrace(data, index, filter) {
 
@@ -37,12 +53,12 @@ function createTrace(data, index, filter) {
     name: data.subDataset.name + ')',
     line: {
       width: 2,
-      color: colors(data.subDataset.reference),
-      dash: styles(data.subDataset.population)
+      color: colors[data.subDataset.reference]
+      //dash: styles(data.subDataset.population)
     },
     marker: {
       width: 2,
-      symbol: symbols(data.subDataset.chip)
+      //symbol: symbols(data.subDataset.chip)
     }
   };
 
@@ -70,22 +86,22 @@ function updatePlot(data, filter) {
     },
     //legend: {"orientation": "h"},
     margin: {
-     l: 50,
-     r: 50,
-     b: 50,
-     t: 30,
-     pad: 4
-   }
+      l: 50,
+      r: 50,
+      b: 50,
+      t: 30,
+      pad: 4
+    }
   };
 
   var config = {
-      displayModeBar: false
+    displayModeBar: false
   }
 
   Plotly.newPlot('plot', traces, layout, config);
 }
 
-$(".filter").change(function(){
+$(".filter").change(function() {
   filter = {
     population: $("#population").val(),
     reference: $("#reference").val(),
@@ -95,6 +111,7 @@ $(".filter").change(function(){
 });
 
 var data = {{ json(query.getResults()) }};
+
 var filter = {
   population: $("#population").val(),
   reference: $("#reference").val(),

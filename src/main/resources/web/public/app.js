@@ -1,3 +1,8 @@
+import Turbolinks from "turbolinks";
+
+Turbolinks.start();
+
+
 function waitDialog() {
   bootbox.dialog({
     title: "Submit Query",

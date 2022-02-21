@@ -1,0 +1,15 @@
+{
+  "imports": {
+    "application": "{{baseUrl}}/app.js",
+    "bootbox": "https://ga.jspm.io/npm:bootbox@5.5.2/bootbox.all.js",
+    "bootstrap": "https://ga.jspm.io/npm:bootstrap@4.6.1/dist/js/bootstrap.js",
+    "plotly": "https://ga.jspm.io/npm:plotly.js-dist@2.8.3/plotly.js",
+    "turbolinks": "https://ga.jspm.io/npm:turbolinks@5.0.0/dist/turbolinks.js",
+    "jquery": "https://ga.jspm.io/npm:jquery@3.6.0/dist/jquery.js"
+  },
+  "scopes": {
+    "https://ga.jspm.io/": {
+      "popper.js": "https://ga.jspm.io/npm:popper.js@1.16.1/dist/umd/popper.js"
+    }
+  }
+}

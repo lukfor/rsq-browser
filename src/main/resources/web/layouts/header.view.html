@@ -9,30 +9,25 @@
   <meta name="generator" content="{{application}} {{version}}">
   <meta name="turbolinks-cache-control" content="no-cache">
   <title>{{title}} - Rsq Browser</title>
-  {{includeScript("https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.0.0/turbolinks.min.js")}}
+  
   {{includeStyle(baseUrl + "/vendor/bootstrap/bootstrap.min.css")}}
   {{includeStyle(baseUrl + "/vendor/datatables/datatables.min.css")}}
   {{includeStyle("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.2/css/all.min.css")}}
   {{includeStyle(baseUrl + "/app.css")}}
-  {{includeScript(baseUrl + "/vendor/jquery/jquery.min.js")}}
-  {{includeScript(baseUrl + "/vendor/popper/popper.min.js")}}
-  {{includeScript(baseUrl + "/vendor/bootstrap/bootstrap.min.js")}}
-  {{includeScript(baseUrl + "/vendor/bootbox/bootbox.min.js")}}
-  {{includeScript(baseUrl + "/vendor/datatables/datatables.min.js")}}
-  {{includeScript(baseUrl + "/vendor/pekeUpload/pekeUpload.min.js")}}
-  {{includeScript("https://dreampuf.github.io/GraphvizOnline/viz.js")}}
-  {{includeScript("//d3js.org/d3.v5.min.js")}}
-  {{includeScript("https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js")}}
-  {{includeScript("https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js")}}
-  {{includeScript("https://cdn.plot.ly/plotly-latest.min.js")}}
 
-  {{includeScript(baseUrl + "/app.js")}}
+  <script type="importmap">
+{{include "importmap.json"}}
+  </script>
+
+  <!-- ES Module Shims: Import maps polyfill for modules browsers without import maps support (all except Chrome 89+) -->
+  <script async src="https://ga.jspm.io/npm:es-module-shims@0.12.8/dist/es-module-shims.min.js" crossorigin="anonymous"></script>
+  <script type="module">import "application"</script>
+
 
 </head>
 
 
 <body class="bg-light">
-
 
   {{include "navbar.view.html"}}
 
