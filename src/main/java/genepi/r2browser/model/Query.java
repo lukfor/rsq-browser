@@ -42,6 +42,8 @@ public class Query implements Runnable {
 
 	private List<Result> results;
 
+	private String build = "hg38";
+
 	public static int EXPIRES_HOURS = 4;
 
 	public String getId() {
@@ -100,6 +102,14 @@ public class Query implements Runnable {
 		this.query = query;
 	}
 
+	public void setBuild(String build) {
+		this.build = build;
+	}
+
+	public String getBuild() {
+		return build;
+	}
+
 	public void setStatus(QueryStatus status) {
 		this.status = status;
 	}
@@ -133,7 +143,7 @@ public class Query implements Runnable {
 
 			long start = System.currentTimeMillis();
 
-			GenomicRegion region = GenomicRegion.parse(query);
+			GenomicRegion region = GenomicRegion.parse(query, build);
 
 			ExtractVariantsTask task = new ExtractVariantsTask(_datasets, _bins);
 			variants = task.findVariants(region);
@@ -162,7 +172,8 @@ public class Query implements Runnable {
 		FileUtil.writeStringBufferToFile(jobFilename, new StringBuffer(gson.toJson(query)));
 	}
 
-	public synchronized static Query create(String id, String workspace, List<Dataset> datasets, float[] bins) {
+	public synchronized static Query create(String id, String workspace, List<Dataset> datasets, float[] bins,
+			String build) {
 		Query query = new Query();
 		query.setId(id);
 		query.setStatus(QueryStatus.SUBMITTED);
@@ -171,6 +182,7 @@ public class Query implements Runnable {
 		query._workspace = workspace;
 		query._datasets = datasets;
 		query._bins = bins;
+		query.build = build;
 		Query.save(query, workspace);
 		return query;
 	}

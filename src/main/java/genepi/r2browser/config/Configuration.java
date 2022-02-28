@@ -42,6 +42,8 @@ public class Configuration {
 
 	private String dbSnpIndex;
 
+	private String build = "hg38";
+
 	public Configuration() {
 
 	}
@@ -169,6 +171,14 @@ public class Configuration {
 			}
 		}
 		return "?";
+	}
+
+	public void setBuild(String build) {
+		this.build = build;
+	}
+
+	public String getBuild() {
+		return build;
 	}
 
 	protected void init() {

@@ -56,6 +56,7 @@ public class ExtractVariantsTask {
 		int results = 0;
 		while (line != null) {
 			results++;
+			System.out.println(line);
 			parseLine(dataset, line);
 			line = result.next();
 		}
