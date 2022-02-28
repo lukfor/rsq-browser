@@ -34,7 +34,7 @@ function createTrace(data, index, filter) {
     x: x,
     y: y,
     type: 'scatter',
-    name: data.subDataset.name + ')',
+    name: data.subDataset.name,
     line: {
       width: 2,
       color: colors(data.subDataset.reference),
