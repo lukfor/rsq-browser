@@ -18,7 +18,7 @@
         <form action="{{routeUrl("queries_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
           <ul class="nav nav-tabs">
             <li class="nav-item">
-              <a class="nav-link active" href="#">Region (GRCh38/hg38)</a>
+              <a class="nav-link active" href="#">Region ({{configuration.build}})</a>
             </li>
             <li class="nav-item">
               <a class="nav-link disabled" href="#">Gene</a>
