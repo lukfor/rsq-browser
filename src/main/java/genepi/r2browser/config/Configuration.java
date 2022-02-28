@@ -3,16 +3,21 @@ package genepi.r2browser.config;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 
+import genepi.io.text.LineReader;
 import genepi.r2browser.App;
 import genepi.r2browser.model.Dataset;
 import genepi.r2browser.model.IdLabel;
 import genepi.r2browser.model.SubDataset;
+import genepi.r2browser.util.GenomicRegion;
 
 public class Configuration {
 
@@ -44,8 +49,16 @@ public class Configuration {
 
 	private String build = "hg38";
 
+	private Map<String, GenomicRegion> genesIndex = new HashMap<String, GenomicRegion>();
+
+	private String genes = null;
+
 	public Configuration() {
 
+	}
+
+	public Map<String, GenomicRegion> getGenesIndex() {
+		return genesIndex;
 	}
 
 	public int getPort() {
@@ -181,7 +194,15 @@ public class Configuration {
 		return build;
 	}
 
-	protected void init() {
+	public String getGenes() {
+		return genes;
+	}
+
+	public void setGenes(String genes) {
+		this.genes = genes;
+	}
+
+	protected void init() throws IOException {
 		for (Dataset dataset : datasets) {
 			for (SubDataset subdataset : dataset.getSubsets()) {
 				String name = String.format("%s - %s (%s)", getPopulationLabel(subdataset.getPopulation()),
@@ -189,9 +210,34 @@ public class Configuration {
 				subdataset.setName(name);
 			}
 		}
+
+		// load genes
+		if (genes != null) {
+			LineReader reader = new LineReader(genes);
+			while (reader.next()) {
+				String line = reader.get();
+				String[] tiles = line.split("\t");
+				if (tiles.length == 4) {
+					GenomicRegion region = new GenomicRegion();
+					if (build == "hg38") {
+						region.setChromosome("chr" + tiles[0]);
+					} else {
+						region.setChromosome(tiles[0]);
+					}
+					region.setStart(Integer.parseInt(tiles[1]));
+					region.setEnd(Integer.parseInt(tiles[2]));
+					genesIndex.put(tiles[3].toLowerCase(), region);
+				}
+			}
+			reader.close();
+
+			System.out.println("Loaded " + genesIndex.size() + " genes from file " + genes);
+
+		}
+
 	}
 
-	public static Configuration loadFromFile(File file, String parent) throws YamlException, FileNotFoundException {
+	public static Configuration loadFromFile(File file, String parent) throws IOException {
 
 		YamlReader reader = new YamlReader(new FileReader(file));
 		reader.getConfig().setPropertyElementType(Configuration.class, "datasets", Dataset.class);

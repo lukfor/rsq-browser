@@ -115,6 +115,13 @@ public class GenomicRegion {
 
 		// TODO: check if gene
 
+		Configuration configuration = App.getDefault().getConfiguration();
+		GenomicRegion location = configuration.getGenesIndex().get(string.toLowerCase());
+
+		if (location != null) {
+			return location;
+		}
+
 		throw new IOException("Unknown format.");
 	}
 
