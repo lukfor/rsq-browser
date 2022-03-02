@@ -144,6 +144,7 @@ public class Query implements Runnable {
 			long start = System.currentTimeMillis();
 
 			GenomicRegion region = GenomicRegion.parse(query, build);
+			setQuery(region.getName());
 
 			ExtractVariantsTask task = new ExtractVariantsTask(_datasets, _bins);
 			variants = task.findVariants(region);

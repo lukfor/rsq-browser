@@ -14,6 +14,8 @@ public class GenomicRegion {
 
 	private int end;
 
+	private String name = "";
+
 	public String getChromosome() {
 		return chromosome;
 	}
@@ -38,6 +40,14 @@ public class GenomicRegion {
 		this.end = end;
 	}
 
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
+	}
+
 	public static GenomicRegion parse(String string, String build) throws IOException {
 
 		if (string.startsWith("rs")) {
@@ -60,6 +70,7 @@ public class GenomicRegion {
 			location.chromosome = chromosome(snp.getChromosome(), build);
 			location.start = (int) snp.getPosition();
 			location.end = (int) snp.getPosition();
+			location.setName(string + " (" + location.chromosome + ":" + location.start + ")");
 			return location;
 
 		}
@@ -74,6 +85,7 @@ public class GenomicRegion {
 				location.start = start;
 				int end = Integer.parseInt(tiles[2]);
 				location.end = end;
+				location.setName(string);
 				return location;
 			}
 		} else if (string.contains(":")) {
@@ -89,6 +101,7 @@ public class GenomicRegion {
 						location.start = start;
 						int end = Integer.parseInt(tiles2[1]);
 						location.end = end;
+						location.setName(string);
 						return location;
 					}
 				} else {
@@ -98,6 +111,7 @@ public class GenomicRegion {
 					int start = Integer.parseInt(tiles[1]);
 					location.start = start;
 					location.end = start;
+					location.setName(string);
 					return location;
 				}
 			}
@@ -110,15 +124,16 @@ public class GenomicRegion {
 			location.chromosome = chromosome(string, build);
 			location.start = 1;
 			location.end = Integer.MAX_VALUE;
+			location.setName(string);
 			return location;
 		}
 
-		// TODO: check if gene
-
+		//check if string is gene
 		Configuration configuration = App.getDefault().getConfiguration();
 		GenomicRegion location = configuration.getGenesIndex().get(string.toLowerCase());
 
 		if (location != null) {
+			location.setName(string + " (" + location.chromosome + ":" + location.start + "-" + location.end + ")");
 			return location;
 		}
 
