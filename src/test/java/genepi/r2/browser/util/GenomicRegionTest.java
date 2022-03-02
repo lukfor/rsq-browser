@@ -18,7 +18,7 @@ public class GenomicRegionTest {
 	@Test
 	public void testSinglePosition() throws IOException {
 		GenomicRegion location = GenomicRegion.parse("6:5001", "hg38");
-		assertEquals("6", location.getChromosome());
+		assertEquals("chr6", location.getChromosome());
 		assertEquals(5001, location.getStart());
 		assertEquals(5001, location.getEnd());
 	}
@@ -26,7 +26,7 @@ public class GenomicRegionTest {
 	@Test
 	public void testRegion() throws IOException {
 		GenomicRegion location = GenomicRegion.parse("6:5001-5010", "hg38");
-		assertEquals("6", location.getChromosome());
+		assertEquals("chr6", location.getChromosome());
 		assertEquals(5001, location.getStart());
 		assertEquals(5010, location.getEnd());
 	}
@@ -34,7 +34,7 @@ public class GenomicRegionTest {
 	@Test
 	public void testRegionInBedFormat() throws IOException {
 		GenomicRegion location = GenomicRegion.parse("6\t5001\t5010", "hg38");
-		assertEquals("6", location.getChromosome());
+		assertEquals("chr6", location.getChromosome());
 		assertEquals(5001, location.getStart());
 		assertEquals(5010, location.getEnd());
 	}
