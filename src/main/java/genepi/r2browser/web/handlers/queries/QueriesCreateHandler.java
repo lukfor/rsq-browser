@@ -33,7 +33,7 @@ public class QueriesCreateHandler extends AbstractHandler {
 
 	public void handle(Context context) throws Exception {
 
-		String q = context.formParam("q");
+		String q = context.formParam("q").trim();
 		Query query = submitQuery(q);
 
 		Map<String, Object> params = new HashMap<String, Object>();

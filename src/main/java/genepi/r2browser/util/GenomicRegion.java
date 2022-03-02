@@ -125,16 +125,20 @@ public class GenomicRegion {
 		throw new IOException("Unknown format.");
 	}
 
-	public String toBedFormat() {
-		return chromosome + "\t" + (start - 1) + "\t" + (end - 1);
-	}
-
 	public static String chromosome(String chromosome, String build) {
 		if (build.equals("hg19")) {
 			return chromosome.replaceAll("chr", "");
 		} else {
-			return chromosome;
+			if (chromosome.contains("chr")) {
+				return chromosome;
+			} else {
+				return "chr" + chromosome;
+			}
 		}
+	}
+
+	public String toString() {
+		return chromosome + ":" + start + "-" + end;
 	}
 
 }

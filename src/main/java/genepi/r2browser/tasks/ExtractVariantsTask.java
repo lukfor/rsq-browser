@@ -50,7 +50,7 @@ public class ExtractVariantsTask {
 
 		TabixReader reader = new TabixReader(dataset.getFilename());
 
-		Iterator result = reader.query(location.getChromosome(), location.getStart(), location.getEnd());
+		Iterator result = reader.query(location.getChromosome(), location.getStart()-1, location.getEnd());
 
 		String line = result.next();
 		int results = 0;

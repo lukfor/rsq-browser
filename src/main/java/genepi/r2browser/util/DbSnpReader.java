@@ -22,12 +22,11 @@ public class DbSnpReader {
 
 		if (line != null) {
 			String[] tiles = line.split("\t");
-			if (tiles.length == 6) {
+			if (tiles.length >= 5) {
 				Snp snp = new Snp();
 				snp.setChromosome(tiles[2]);
 				snp.setPosition(Integer.parseInt(tiles[3]));
 				snp.setReference(tiles[4].replaceAll("\\*", ""));
-				snp.setAlternate(tiles[5]);
 				return snp;
 			} else {
 				throw new IOException("Index has not 6 columns.");
