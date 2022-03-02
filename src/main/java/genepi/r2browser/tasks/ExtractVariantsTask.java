@@ -24,13 +24,15 @@ public class ExtractVariantsTask {
 
 	private float[] bins;
 
+	private float[] bins2 = new float[] { 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f };
+
 	public ExtractVariantsTask(List<Dataset> datasets, float[] bins) {
 
 		this.bins = bins;
 		this.datasets = datasets;
 		for (Dataset dataset : datasets) {
 			for (SubDataset subDataset : dataset.getSubsets()) {
-				Result result = new Result(subDataset, bins);
+				Result result = new Result(subDataset, bins, bins2);
 				index.put(subDataset, result);
 				results.add(result);
 			}
@@ -50,7 +52,7 @@ public class ExtractVariantsTask {
 
 		TabixReader reader = new TabixReader(dataset.getFilename());
 
-		Iterator result = reader.query(location.getChromosome(), location.getStart()-1, location.getEnd());
+		Iterator result = reader.query(location.getChromosome(), location.getStart() - 1, location.getEnd());
 
 		String line = result.next();
 		int results = 0;
@@ -86,6 +88,14 @@ public class ExtractVariantsTask {
 			if (!tiles[i].equals("NA")) {
 				double value = Double.parseDouble(tiles[i]);
 				bin.addValue(value);
+
+				int in = getBinByQuality(value);
+				if (in == -1) {
+					in = 0;
+				}
+
+				index.get(subDataset).getAggregatedQualities().get(in).addValue(1);
+
 			}
 
 			subset++;
@@ -105,6 +115,18 @@ public class ExtractVariantsTask {
 			i++;
 		}
 		return -1;
+	}
+
+	public int getBinByQuality(double quality) {
+
+		int i = 0;
+		for (float bin : bins2) {
+			if (quality <= bin) {
+				return i ;
+			}
+			i++;
+		}
+		return bins2.length - 1;
 	}
 
 	public List<Result> getResults() {
