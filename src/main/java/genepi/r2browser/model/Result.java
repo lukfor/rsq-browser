@@ -9,6 +9,8 @@ public class Result {
 
 	private List<AggregatedBin> aggregatedBins = new Vector<AggregatedBin>();
 
+	private int count;
+	
 	public Result(SubDataset subDataset, float[] bins) {
 		this.subDataset = subDataset;
 		for (int i = 1; i < bins.length; i++) {
@@ -31,4 +33,18 @@ public class Result {
 	public void setSubDataset(SubDataset subDataset) {
 		this.subDataset = subDataset;
 	}
+	
+	public int updateCounter() {
+		count = 0;
+		for (AggregatedBin bin: aggregatedBins) {
+			count += bin.getCount();
+		}
+		System.out.println("GET COUNT");
+		return count;
+	}
+	
+	public void setCount(int count) {
+		this.count = count;
+	}
+	
 }

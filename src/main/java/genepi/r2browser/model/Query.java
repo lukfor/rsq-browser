@@ -195,7 +195,13 @@ public class Query implements Runnable {
 
 		if (jobFile.exists()) {
 			Gson gson = new Gson();
-			return gson.fromJson(new FileReader(jobFile), Query.class);
+			Query query = gson.fromJson(new FileReader(jobFile), Query.class);
+			if (query.getResults() != null) {
+				for (Result result : query.getResults()) {
+					result.updateCounter();
+				}
+			}
+			return query;
 		} else {
 			return null;
 		}

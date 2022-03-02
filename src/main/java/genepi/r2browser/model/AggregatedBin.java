@@ -25,4 +25,8 @@ public class AggregatedBin {
 		return end;
 	}
 
+	public int getCount() {
+		return count;
+	}
+
 }
