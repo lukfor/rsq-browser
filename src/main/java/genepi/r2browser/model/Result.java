@@ -39,7 +39,6 @@ public class Result {
 		for (AggregatedBin bin: aggregatedBins) {
 			count += bin.getCount();
 		}
-		System.out.println("GET COUNT");
 		return count;
 	}
 	
