@@ -2,7 +2,9 @@ var colors = Plotly.d3.scale.category10();
 var styles = Plotly.d3.scale.ordinal().range(["dash", "dot", "dashdot", "longdash", "longdashdot", "solid"]);
 var symbols = Plotly.d3.scale.ordinal().range(["circle-open", "square-open", "x","triangle-left-open-dot" ]);
 
-function createTrace(data, index, filter) {
+var AVG_R2 = 1;
+
+function createTrace(data, index, filter, mode) {
 
   var x = [];
   var y = [];
@@ -27,7 +29,11 @@ function createTrace(data, index, filter) {
 
   for (var i = 0; i < data.aggregatedBins.length; i++) {
     x.push(data.aggregatedBins[i].end);
-    y.push(data.aggregatedBins[i].sum / data.aggregatedBins[i].count);
+    if (mode == AVG_R2){
+      y.push(data.aggregatedBins[i].sum / data.aggregatedBins[i].count);
+    } else {
+      y.push(data.aggregatedBins[i].count08 / data.aggregatedBins[i].count);
+    }
   }
 
   return {
@@ -48,11 +54,11 @@ function createTrace(data, index, filter) {
 
 }
 
-function updatePlot(data, filter) {
+function updatePlot(data, filter, mode) {
 
   var traces = [];
   for (var i = 0; i < data.length; i++) {
-    var trace = createTrace(data[i], i, filter);
+    var trace = createTrace(data[i], i, filter, mode);
     if (trace != undefined) {
       traces.push(trace);
     }
@@ -65,7 +71,7 @@ function updatePlot(data, filter) {
       title: "Minor Allele Frequency (MAF)"
     },
     yaxis: {
-      title: "Average Imputation Quality",
+      title: mode == AVG_R2 ? "Average Imputation Quality" : "Proportion of variants with r2>0.8",
       range: [0, 1]
     },
     //legend: {"orientation": "h"},
@@ -91,7 +97,7 @@ $(".filter").change(function(){
     reference: $("#reference").val(),
     chip: $("#chip").val()
   }
-  updatePlot(data, filter)
+  updatePlot(data, filter, $("#metric").val())
 });
 
 var data = {{ json(query.getResults()) }};
@@ -100,4 +106,4 @@ var filter = {
   reference: $("#reference").val(),
   chip: $("#chip").val()
 }
-updatePlot(data, filter);
+updatePlot(data, filter, AVG_R2);

@@ -8,6 +8,8 @@ public class AggregatedBin {
 
 	float end = 0;
 
+	int count08 = 0;
+
 	public AggregatedBin(float end) {
 		this.end = end;
 	}
@@ -15,6 +17,9 @@ public class AggregatedBin {
 	public void addValue(double value) {
 		sum += value;
 		count++;
+		if (value > 0.8) {
+			count08++;
+		}
 	}
 
 	public double getMean() {
@@ -27,6 +32,10 @@ public class AggregatedBin {
 
 	public int getCount() {
 		return count;
+	}
+
+	public double getPercentage08() {
+		return count08 / (double) count;
 	}
 
 }
