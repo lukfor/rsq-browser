@@ -31,6 +31,7 @@ public class QueriesShowHandler extends AbstractHandler {
 			Page page = new Page(context, template);
 			page.put("query", query);
 			page.put("configuration", configuration);
+			page.put("downloads", configuration.getDownloads());
 			page.render();
 
 		} else {

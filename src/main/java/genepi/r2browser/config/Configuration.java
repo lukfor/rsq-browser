@@ -1,7 +1,6 @@
 package genepi.r2browser.config;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
@@ -9,12 +8,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 
 import genepi.io.text.LineReader;
 import genepi.r2browser.App;
+import genepi.r2browser.model.AdditionalDownload;
 import genepi.r2browser.model.Dataset;
+import genepi.r2browser.model.DatasetDetails;
 import genepi.r2browser.model.IdLabel;
 import genepi.r2browser.model.SubDataset;
 import genepi.r2browser.util.GenomicRegion;
@@ -52,6 +52,10 @@ public class Configuration {
 	private Map<String, GenomicRegion> genesIndex = new HashMap<String, GenomicRegion>();
 
 	private String genes = null;
+
+	private List<DatasetDetails> downloads = new Vector<DatasetDetails>();
+
+	private List<AdditionalDownload> files = new Vector<AdditionalDownload>();
 
 	public Configuration() {
 
@@ -202,6 +206,22 @@ public class Configuration {
 		this.genes = genes;
 	}
 
+	public List<DatasetDetails> getDownloads() {
+		return downloads;
+	}
+
+	public void setDownloads(List<DatasetDetails> downloads) {
+		this.downloads = downloads;
+	}
+
+	public List<AdditionalDownload> getFiles() {
+		return files;
+	}
+
+	public void setFiles(List<AdditionalDownload> files) {
+		this.files = files;
+	}
+
 	protected void init() throws IOException {
 		for (Dataset dataset : datasets) {
 			for (SubDataset subdataset : dataset.getSubsets()) {
@@ -235,6 +255,12 @@ public class Configuration {
 
 		}
 
+		int index = 0;
+		for (Dataset dataset : getDatasets()) {
+			downloads.add(new DatasetDetails(dataset, index, this));
+			index++;
+		}
+
 	}
 
 	public static Configuration loadFromFile(File file, String parent) throws IOException {
@@ -245,6 +271,7 @@ public class Configuration {
 		reader.getConfig().setPropertyElementType(Configuration.class, "populations", IdLabel.class);
 		reader.getConfig().setPropertyElementType(Configuration.class, "chips", IdLabel.class);
 		reader.getConfig().setPropertyElementType(Configuration.class, "references", IdLabel.class);
+		reader.getConfig().setPropertyElementType(Configuration.class, "files", AdditionalDownload.class);
 
 		Configuration configuration = reader.read(Configuration.class);
 		configuration.init();

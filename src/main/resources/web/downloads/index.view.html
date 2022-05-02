@@ -1,0 +1,45 @@
+{{ title = "Downloads" }}
+{{include "../layouts/header.view.html"}}
+
+<div id="page-content">
+
+  <div class="container">
+
+    <h1>Downloads</h1>
+
+    {{for download in downloads}}
+    <h3>{{download.getPopulations()}}</h3>
+    <ul>
+      <li>Filename: {{download.getFilename()}}</li>
+      <li>Genotyping Arrays: {{download.getChips()}}</li>
+      <li>Reference Panels: {{download.getReferences()}}</li>
+      <li>
+        <a href="{{routeUrl("download_details",{index: download.getIndex(), filename: download.getFilename()})}}"><i class="fas fa-download"></i> Download</a> ({{download.getSize()}})
+      </li>
+    </ul>
+
+    {{end}}
+
+    {{if files.size() > 0}}
+
+        <hr class="mt-5 mb-5">
+
+        <h1>Additional Data</h1>
+
+        {{for index,file in files}}
+        <h3>{{file.getName()}}</h3>
+        <ul>
+          <li>Filename: {{file.getFilenameOnly()}}</li>
+          <li>
+            <a href="{{routeUrl("file_details",{index: index, filename: file.getFilenameOnly()})}}"><i class="fas fa-download"></i> Download</a> ({{file.getSize()}})
+          </li>
+        </ul>
+        {{end}}
+
+    {{end}}
+
+  </div>
+
+</div>
+
+{{include "../layouts/footer.view.html"}}
