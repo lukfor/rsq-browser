@@ -11,6 +11,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
 import genepi.io.FileUtil;
+import genepi.r2browser.config.Configuration;
 import genepi.r2browser.tasks.ExtractVariantsTask;
 import genepi.r2browser.util.GenomicRegion;
 
@@ -45,6 +46,8 @@ public class Query implements Runnable {
 	private String build = "hg38";
 
 	public static int EXPIRES_HOURS = 4;
+	
+	private Configuration configuration;
 
 	public String getId() {
 		return id;
@@ -133,6 +136,15 @@ public class Query implements Runnable {
 	public void setResults(List<Result> results) {
 		this.results = results;
 	}
+	
+	public void setConfiguration(Configuration configuration) {
+		this.configuration = configuration;
+	}
+	
+	public Configuration getConfiguration() {
+		return configuration;
+	}
+	
 
 	public void run() {
 
@@ -143,7 +155,7 @@ public class Query implements Runnable {
 
 			long start = System.currentTimeMillis();
 
-			GenomicRegion region = GenomicRegion.parse(query, build);
+			GenomicRegion region = GenomicRegion.parse(query, build, configuration);
 			setQuery(region.getName());
 
 			ExtractVariantsTask task = new ExtractVariantsTask(_datasets, _bins);

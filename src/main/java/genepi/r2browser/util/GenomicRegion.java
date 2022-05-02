@@ -2,7 +2,6 @@ package genepi.r2browser.util;
 
 import java.io.IOException;
 
-import genepi.r2browser.App;
 import genepi.r2browser.config.Configuration;
 import genepi.r2browser.util.DbSnpReader.Snp;
 
@@ -48,11 +47,9 @@ public class GenomicRegion {
 		return name;
 	}
 
-	public static GenomicRegion parse(String string, String build) throws IOException {
+	public static GenomicRegion parse(String string, String build, Configuration configuration) throws IOException {
 
 		if (string.startsWith("rs")) {
-
-			Configuration configuration = App.getDefault().getConfiguration();
 
 			String dbsnpIndex = configuration.getDbSnpIndex();
 
@@ -129,7 +126,6 @@ public class GenomicRegion {
 		}
 
 		//check if string is gene
-		Configuration configuration = App.getDefault().getConfiguration();
 		GenomicRegion location = configuration.getGenesIndex().get(string.toLowerCase());
 
 		if (location != null) {

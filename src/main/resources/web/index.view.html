@@ -27,7 +27,7 @@
           </ul>
           <br>
 			<div class="tab-content" id="myTabContent">
-			  <div class="tab-pane show active" id="region" role="tabpanel" aria-labelledby="region-tab">        
+			  <div class="tab-pane show active" id="region" role="tabpanel" aria-labelledby="region-tab">
         		 <form action="{{routeUrl("queries_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
 			        <div class="form-group">
 			          <input name="q" class="form-control" placeholder="chr1:2000000-5000000" autocomplete="off" value="chr1:10000000-11000000">
@@ -39,9 +39,9 @@
         		 </form>
 			  </div>
 			   {{if (configuration.getGenes() != null)}}
-			  <div class="tab-pane" id="gene" role="tabpanel" aria-labelledby="gene-tab">        
+			  <div class="tab-pane" id="gene" role="tabpanel" aria-labelledby="gene-tab">
 			     <form action="{{routeUrl("queries_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
-			  
+
 			        <div class="form-group">
 			          <input name="q" class="form-control" placeholder="LPA" autocomplete="off" value="LPA">
 			        </div>
@@ -51,7 +51,7 @@
 	        		<button type="submit" id="submit" class="btn btn-primary btn-lg btn-upload">Search</button>
 	        	</form>
 			  </div>
-			       {{end}}			  
+			       {{end}}
         	</div>
 
     </div>

@@ -2,16 +2,13 @@ package genepi.r2browser.web.util;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import io.javalin.http.Context;
-
 public class ErrorPage extends Page {
 
 	private static final long serialVersionUID = 1L;
 
 	public static final String TEMPLATE = "web/error.view.html";
 
-	public ErrorPage(Context context) {
-		super(context, TEMPLATE);
+	public ErrorPage() {
 		put("stackTrace", "");
 	}
 
@@ -28,8 +25,5 @@ public class ErrorPage extends Page {
 		put("stackTrace", stackTrace);
 	}
 
-	public void render() {
-		this.context.render(template, this);
-	}
 
 }

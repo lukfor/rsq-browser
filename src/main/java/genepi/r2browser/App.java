@@ -5,13 +5,15 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 import genepi.io.FileUtil;
-import genepi.r2browser.commands.ServerCommand;
 import genepi.r2browser.config.Configuration;
 import genepi.r2browser.web.util.JobQueue;
+import io.micronaut.context.annotation.Context;
+import io.micronaut.runtime.Micronaut;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(name = "covidgrep")
+@Context
 public class App implements Runnable {
 
 	public static final String NAME = "rsq-browser";
@@ -24,8 +26,6 @@ public class App implements Runnable {
 
 	public static final String CONFIG_FILENAME = "rsq-browser.yaml";
 
-	private static App instance;
-
 	private Configuration configuration = new Configuration();
 
 	private String configFilename = null;
@@ -33,13 +33,6 @@ public class App implements Runnable {
 	private JobQueue jobQueue;
 
 	private static CommandLine commandLine;
-
-	public static synchronized App getDefault() {
-		if (instance == null) {
-			instance = new App();
-		}
-		return instance;
-	}
 
 	public void loadConfiguration(String configFilename) {
 
@@ -97,16 +90,13 @@ public class App implements Runnable {
 			System.out.println(COPYRIGHT);
 		}
 		
-		new App();
-
-		commandLine = new CommandLine(new ServerCommand());
-		int result = commandLine.execute(args);
-		System.exit(result);
+		Micronaut.run(App.class, args);
+		
 
 	}
 
 	public static boolean isDevelopmentSystem() {
-		return new File("src/main/resources").exists();
+		return true;
 	}
 
 	@Override

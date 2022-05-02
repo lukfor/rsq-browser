@@ -1,0 +1,44 @@
+port: 7000
+maxUploadSizeMb: 35
+caching: false
+dbSnpIndex: /Users/lukfor/Data/dbsnp-index/dbsnp150_hg19txt.gz
+build: hg19
+
+populations:
+  - id: "mixed"
+    label: "Mixed"
+
+references:
+  - id: "1kg"
+    label: "1000 Genomes"
+
+chips:
+  - id: "GSA"
+    label: "GSA"
+  - id: "IO"
+    label : "Omni 2.5M"
+
+datasets:
+  - filename: /Users/lukfor/Data/r2web/data/GSAMD-24v3-0-EA_20034606_A1.b37.tab.gz
+    subsets:
+      - column: R2_gsa_1000g
+        reference: 1kg
+        chip: GSA
+        population: mixed
+
+bins:
+  - 0.0000
+  - 0.0005
+  - 0.001
+  - 0.002
+  - 0.005
+  - 0.010
+  - 0.015
+  - 0.020
+  - 0.035
+  - 0.050
+  - 0.100
+  - 0.200
+  - 0.300
+  - 0.400
+  - 0.500

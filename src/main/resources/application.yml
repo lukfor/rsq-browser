@@ -1,0 +1,11 @@
+micronaut:
+  application:
+    name: rsq-browser
+  server:
+    port: 8080    
+  router:
+    static-resources:
+      public:
+        enabled: true
+        paths:
+          - classpath:web/public
