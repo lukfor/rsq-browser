@@ -30,14 +30,27 @@ Reference Panel:
     <option value="{{reference.id}}" {{reference.selected ? "selected" : ""}}>{{reference.label}}</option>
     {{end}}
   </select>
+&nbsp;&nbsp;&nbsp;
+  <div class="btn-group" role="group">
+    <button id="btnGroupDrop1" type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <i class="fas fa-download"></i> Download
+    </button>
+    <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
+      {{for download in downloads}}
+        <a class="dropdown-item" href="{{routeUrl("download_details",{index: download.getIndex(), filename: download.getFilename()})}}?q={{query.query}}"><i class="fas fa-file"></i> {{download.getPopulations()}}</a>
+      {{end}}
+    </div>
+  </div>
 
   <div id="plot"></div>
 
   <p class="text-muted mt-5">
     <small>Analyzed <b>{{decimal(query.variants)}}</b> variants ({{query.executionTime / 1000.0}} seconds)</small>
   </p>
-  
+
 </div>
+
+<hr>
 
 
 <script>
