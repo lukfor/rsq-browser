@@ -23,7 +23,7 @@ public class ExtractVariantsTask {
 
 	private Map<SubDataset, Result> index = new HashMap<SubDataset, Result>();
 
-	private Map<String, Integer> columns = new HashMap<String, Integer>();
+	private SubDataset[] subsets;
 
 	private float[] bins;
 
@@ -55,8 +55,14 @@ public class ExtractVariantsTask {
 		readerHeader.next();
 		String header = readerHeader.get();
 		String[] tiles = header.split("\t");
+		Map<String, Integer> columns = new HashMap<String, Integer>();
 		for (int i = 0; i < tiles.length; i++) {
 			columns.put(tiles[i], i);
+		}
+		subsets = new SubDataset[tiles.length];
+		for (SubDataset subDataset : dataset.getSubsets()) {
+			int column = columns.get(subDataset.getColumn());
+			subsets[column] = subDataset;
 		}
 
 		readerHeader.close();
@@ -90,15 +96,15 @@ public class ExtractVariantsTask {
 			binIndex = 0;
 		}
 
-		for (SubDataset subDataset : dataset.getSubsets()) {
+		for (int column = 0; column < subsets.length; column++) {
+			SubDataset subDataset = subsets[column];
+			if (subDataset != null) {
 
-			int column = columns.get(subDataset.getColumn());
-
-			AggregatedBin bin = index.get(subDataset).getAggregatedBins().get(binIndex);
-
-			if (!tiles[column].equals("NA")) {
-				double value = Double.parseDouble(tiles[column]);
-				bin.addValue(value);
+				if (!tiles[column].equals("NA")) {
+					AggregatedBin bin = index.get(subDataset).getAggregatedBins().get(binIndex);
+					double value = Double.parseDouble(tiles[column]);
+					bin.addValue(value);
+				}
 			}
 
 		}
