@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import genepi.io.text.LineReader;
 import genepi.r2browser.model.AggregatedBin;
 import genepi.r2browser.model.Dataset;
 import genepi.r2browser.model.Result;
@@ -21,6 +22,8 @@ public class ExtractVariantsTask {
 	private List<Result> results = new Vector<Result>();
 
 	private Map<SubDataset, Result> index = new HashMap<SubDataset, Result>();
+
+	private Map<String, Integer> columns = new HashMap<String, Integer>();
 
 	private float[] bins;
 
@@ -48,9 +51,19 @@ public class ExtractVariantsTask {
 
 	protected int findVariants(Dataset dataset, GenomicRegion location) throws IOException {
 
+		LineReader readerHeader = new LineReader(dataset.getFilename());
+		readerHeader.next();
+		String header = readerHeader.get();
+		String[] tiles = header.split("\t");
+		for (int i = 0; i < tiles.length; i++) {
+			columns.put(tiles[i], i);
+		}
+
+		readerHeader.close();
+
 		TabixReader reader = new TabixReader(dataset.getFilename());
 
-		Iterator result = reader.query(location.getChromosome(), location.getStart()-1, location.getEnd());
+		Iterator result = reader.query(location.getChromosome(), location.getStart() - 1, location.getEnd());
 
 		String line = result.next();
 		int results = 0;
@@ -77,18 +90,17 @@ public class ExtractVariantsTask {
 			binIndex = 0;
 		}
 
-		int subset = 0;
+		for (SubDataset subDataset : dataset.getSubsets()) {
 
-		for (int i = 5; i < tiles.length; i += 2) {
-			SubDataset subDataset = dataset.getSubsets().get(subset);
+			int column = columns.get(subDataset.getColumn());
+
 			AggregatedBin bin = index.get(subDataset).getAggregatedBins().get(binIndex);
 
-			if (!tiles[i].equals("NA")) {
-				double value = Double.parseDouble(tiles[i]);
+			if (!tiles[column].equals("NA")) {
+				double value = Double.parseDouble(tiles[column]);
 				bin.addValue(value);
 			}
 
-			subset++;
 		}
 
 	}
