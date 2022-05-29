@@ -11,6 +11,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
 import genepi.io.FileUtil;
+import genepi.io.table.writer.CsvTableWriter;
 import genepi.r2browser.tasks.ExtractVariantsTask;
 import genepi.r2browser.util.GenomicRegion;
 
@@ -171,6 +172,28 @@ public class Query implements Runnable {
 		String jobFilename = FileUtil.path(workspace, query.getId() + ".json");
 		Gson gson = new Gson();
 		FileUtil.writeStringBufferToFile(jobFilename, new StringBuffer(gson.toJson(query)));
+
+		if (query.getResults() == null) {
+			return;
+		}
+
+		String csvFilename = FileUtil.path(workspace, query.getId() + ".csv");
+		CsvTableWriter writer = new CsvTableWriter(csvFilename);
+		writer.setColumns(new String[] { "name", "reference", "chip", "population", "maf", "mean", "percentage08" });
+		for (Result result : query.getResults()) {
+			for (AggregatedBin bin : result.getAggregatedBins()) {
+				writer.setString("name", result.getSubDataset().getName());
+				writer.setString("reference", result.getSubDataset() .getReference());
+				writer.setString("chip", result.getSubDataset().getChip());
+				writer.setString("population", result.getSubDataset().getPopulation());
+				writer.setDouble("maf", bin.getEnd());
+				writer.setDouble("mean", bin.getMean());
+				writer.setDouble("percentage08", bin.getPercentage08());
+				writer.next();
+			}
+		}
+		writer.close();
+
 	}
 
 	public synchronized static Query create(String id, String workspace, List<Dataset> datasets, float[] bins,
