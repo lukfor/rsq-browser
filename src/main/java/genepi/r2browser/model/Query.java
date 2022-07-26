@@ -21,6 +21,8 @@ public class Query implements Runnable {
 
 	private String query;
 
+	private String rawQuery;
+
 	private int variants;
 
 	private Date submittedOn;
@@ -103,6 +105,14 @@ public class Query implements Runnable {
 		this.query = query;
 	}
 
+	public String getRawQuery() {
+		return rawQuery;
+	}
+
+	public void setRawQuery(String rawQuery) {
+		this.rawQuery = rawQuery;
+	}
+
 	public void setBuild(String build) {
 		this.build = build;
 	}
@@ -138,12 +148,13 @@ public class Query implements Runnable {
 	public void run() {
 
 		setStatus(QueryStatus.RUNNING);
+		setRawQuery(query);
 		Query.save(this, _workspace);
 
 		try {
 
 			long start = System.currentTimeMillis();
-
+			
 			GenomicRegion region = GenomicRegion.parse(query, build);
 			setQuery(region.getName());
 
@@ -183,7 +194,7 @@ public class Query implements Runnable {
 		for (Result result : query.getResults()) {
 			for (AggregatedBin bin : result.getAggregatedBins()) {
 				writer.setString("name", result.getSubDataset().getName());
-				writer.setString("reference", result.getSubDataset() .getReference());
+				writer.setString("reference", result.getSubDataset().getReference());
 				writer.setString("chip", result.getSubDataset().getChip());
 				writer.setString("population", result.getSubDataset().getPopulation());
 				writer.setDouble("maf", bin.getEnd());

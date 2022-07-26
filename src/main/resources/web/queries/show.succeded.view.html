@@ -37,7 +37,7 @@ Reference Panel:
     </button>
     <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
       {{for download in downloads}}
-        <a class="dropdown-item" href="{{routeUrl("download_details",{index: download.getIndex(), filename: download.getFilename()})}}?q={{query.query}}"><i class="fas fa-file"></i> {{download.getPopulations()}}</a>
+        <a class="dropdown-item" href="{{routeUrl("download_details",{index: download.getIndex(), filename: download.getFilename()})}}?q={{query.rawQuery}}"><i class="fas fa-file"></i> {{download.getPopulations()}}</a>
       {{end}}
     </div>
   </div>
