@@ -4,6 +4,8 @@
 
 A web-application to search and compare imputation qualities among different populations, genotyping arrays and reference panels.
 
+The application is available here: https://imputationserver.sph.umich.edu/rsq-browser
+
 ## Requirements
 
 You will need the following things properly installed on your computer.
