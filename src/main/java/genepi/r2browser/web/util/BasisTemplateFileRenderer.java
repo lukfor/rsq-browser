@@ -14,6 +14,7 @@ import genepi.io.FileUtil;
 import genepi.r2browser.web.WebApp;
 import genepi.r2browser.web.util.functions.DecimalFunction;
 import genepi.r2browser.web.util.functions.DoubleFormatFunction;
+import genepi.r2browser.web.util.functions.EscapeFunction;
 import genepi.r2browser.web.util.functions.IncludeScriptFunction;
 import genepi.r2browser.web.util.functions.IncludeStyleFunction;
 import genepi.r2browser.web.util.functions.IsRouteActiveFunction;
@@ -77,7 +78,8 @@ public class BasisTemplateFileRenderer implements FileRenderer {
 		templateContext.set("includeStyle", new IncludeStyleFunction());
 		templateContext.set("json", new ToJsonFunction());
 		templateContext.set("routeUrl", new RouteFunction(server));
-
+		templateContext.set("escape", new EscapeFunction());
+		
 		if (context.handlerType() != HandlerType.BEFORE) {
 			String path = context.endpointHandlerPath();
 			String route = server.getNameByPath(path);
