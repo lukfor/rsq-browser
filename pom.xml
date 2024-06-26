@@ -5,7 +5,7 @@
 
 	<groupId>genepi</groupId>
 	<artifactId>rsq-browser</artifactId>
-	<version>0.5.7</version>
+	<version>0.5.8</version>
 	<packaging>jar</packaging>
 
 	<name>rsq-browser</name>
