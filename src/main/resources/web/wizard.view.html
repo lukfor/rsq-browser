@@ -1,0 +1,172 @@
+{{ title = "Genotyping Array Advisor" }}
+{{include "layouts/header.view.html"}}
+
+<div id="page-content">
+
+    <div class="container">
+    <h1>Genotyping Array Wizard</h1>
+
+        <p>Please answer the following questions regarding your study population, data upload permissions, genes and SNPs of interest, and whether you have already genotyped your data. Based on your responses, we will suggest the most suitable genotyping array for your research needs.</p>
+
+        <hr class="m-5">
+
+        <form id="genotypingForm" action="{{routeUrl("reports_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
+            <!-- Population Selection -->
+            <div class="form-group">
+                <label for="populationSelect">What is the population of your study?</label>
+                <select class="form-control" id="populationSelect" name="population" required>
+                    <option value="" disabled selected>Select a population</option>
+                    <option value="european">European</option>
+                    <option value="african">African</option>
+                    <option value="asian">Asian</option>
+                    <option value="american">American</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <!-- Data Upload Permission -->
+            <div class="form-group">
+                <label for="uploadPermission">Is it allowed to upload data to an external server?</label>
+                <select class="form-control" id="uploadPermission" name="uploadPermission" required>
+                    <option value="" disabled selected>Select an option</option>
+                    <option value="yes">Yes</option>
+                    <option value="yes_europe">Yes, but the server has to be located in Europe</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+
+            <!-- Genotyped Data -->
+            <div class="form-group">
+                <label for="genotypedData">Have you already genotyped your data?</label>
+                <select class="form-control" id="genotypedData" name="genotypedData" required>
+                    <option value="" disabled selected>Select an option</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+
+            <!-- Chip Selection (Only shows if data is genotyped) -->
+            <div class="form-group" id="chipSelection" style="display: none;">
+                <label for="chipSelect">Which genotyping chip was used?</label>
+                <select class="form-control" id="chipSelect" name="chipSelect">
+                    <option value="" disabled selected>Select a chip</option>
+                    <option value="HC">Core</option>
+                    <option value="OE">OmniExpress</option>
+                    <option value="IO">Omni 2.5M</option>
+                    <option value="MG">MEGA</option>
+                </select>
+            </div>
+
+
+            <hr>
+
+            <!-- Genes of Interest -->
+            <div class="form-group">
+                <label for="genesInput">Which genes are you interested in? (Enter one per line)</label>
+                <textarea class="form-control" id="genesInput" name="genes" rows="5"></textarea>
+            </div>
+
+            <!-- SNPs of Interest -->
+            <div class="form-group">
+                <label for="snpsInput">Which SNPs are you interested in? (Enter one per line)</label>
+                <textarea class="form-control" id="snpsInput" name="snps" rows="5"></textarea>
+            </div>
+
+            <hr>
+
+            <!-- Rare Variant Analysis -->
+            <div class="form-group">
+                <label for="rareVariantAnalysis">Do you need rare variant analysis?</label>
+                <select class="form-control" id="rareVariantAnalysis" name="rareVariantAnalysis" required>
+                    <option value="" disabled selected>Select an option</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+
+            <hr>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary" id="submitButton" disabled>Submit</button>
+            <br><br>
+            <h3>No data at hand? Try one of our examples</h3>
+
+            <b>Breast Cancer Study:</b> Breast cancer is one of the most common cancers affecting women worldwide. It is characterized by the uncontrolled growth of cells in the breast tissue, which can spread to other parts of the body. Genetic factors, such as mutations in the BRCA1 and TP53 genes, are known to increase the risk of developing breast cancer. Understanding genetic variants and SNPs associated with breast cancer can provide insights into its susceptibility, diagnosis, and potential treatment options. Studies on rare variants can help identify novel genetic risk factors for more personalized medicine.
+            <br><button type="button" class="btn btn-secondary ml-2" id="exampleButton">Fill Form</button>
+            <hr>
+
+            <b>Coronary Artery Disease (CAD) Study:</b> Coronary artery disease (CAD) refers to the narrowing or blockage of the coronary arteries, usually due to the build-up of plaque, which can lead to heart attacks or other cardiovascular problems. Key genes like LDLR (Low-Density Lipoprotein Receptor) and APOE (Apolipoprotein E) play a crucial role in lipid metabolism and cholesterol regulation, both of which are important in the development of CAD. Studying SNPs such as rs10455872 and rs1122608 can help researchers understand the genetic underpinnings of CAD and improve strategies for prevention, early detection, and treatment. Although rare variant analysis is often critical in other diseases, it may not always be necessary for CAD studies, as common variants may play a more significant role.
+            <br><button type="button" class="btn btn-secondary ml-2" id="cadExampleButton">Fill Form</button>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+           // Function to check form validity
+           function checkFormValidity() {
+               const population = $('#populationSelect').val();
+               const uploadPermission = $('#uploadPermission').val();
+               const genes = $('#genesInput').val().trim();
+               const snps = $('#snpsInput').val().trim();
+               const rareVariantAnalysis = $('#rareVariantAnalysis').val();
+               const genotypedData = $('#genotypedData').val();
+               const chipSelect = $('#chipSelect').val();
+
+               // Enable submit if all required fields are filled
+               if (population && uploadPermission && genes && snps && rareVariantAnalysis && genotypedData && (genotypedData === 'no' || chipSelect)) {
+                   $('#submitButton').prop('disabled', false);
+               } else {
+                   $('#submitButton').prop('disabled', true);
+               }
+           }
+
+           // Monitor changes and inputs
+           $('#populationSelect, #uploadPermission, #rareVariantAnalysis, #genotypedData').change(checkFormValidity);
+           $('#genesInput, #snpsInput').on('input', checkFormValidity);
+
+           // Show chip selection if "Yes" for genotyped data
+           $('#genotypedData').change(function () {
+               if ($(this).val() === 'yes') {
+                   $('#chipSelection').show();
+               } else {
+                   $('#chipSelect').val('');
+                   $('#chipSelection').hide();
+               }
+
+               // Trigger validation after changing genotypedData
+               checkFormValidity();
+           });
+
+           // Example button functionality
+           $('#exampleButton').click(function () {
+               $('#populationSelect').val('european');
+               $('#uploadPermission').val('yes');
+               $('#genesInput').val('BRCA1\nTP53');
+               $('#snpsInput').val('rs123456\nrs7891011');
+               $('#rareVariantAnalysis').val('yes');
+               $('#genotypedData').val('yes');
+               $('#chipSelect').val('IO'); // Omni 2.5M selected
+               $('#chipSelection').show();
+
+               // Trigger validation after filling example values
+               checkFormValidity();
+           });
+
+             // Example button for CAD Study
+           $('#cadExampleButton').click(function () {
+               $('#populationSelect').val('european');
+               $('#uploadPermission').val('yes');
+               $('#genesInput').val('LDLR\nAPOE\nLPA');
+               $('#snpsInput').val('rs10455872\nrs1122608');
+               $('#rareVariantAnalysis').val('no');
+               $('#genotypedData').val('no');
+               $('#chipSelect').val('');
+               $('#chipSelection').hide();
+               // Trigger validation after filling example values
+               checkFormValidity();
+           });
+       });
+</script>
+{{include "layouts/footer.view.html"}}
