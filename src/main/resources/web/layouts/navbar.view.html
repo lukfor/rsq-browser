@@ -17,6 +17,11 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link {{isRouteActive("advisor") ? "active":""}}" href="{{routeUrl("wizard",{})}}">
+        <i class="fas fa-magic"></i> Wizard
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link {{isRouteActive("download_list") ? "active":""}}" href="{{routeUrl("download_list",{})}}">
             <i class="fas fa-download"></i> Downloads
         </a>
