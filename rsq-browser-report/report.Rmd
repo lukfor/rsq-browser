@@ -86,10 +86,10 @@ data_plot <- data_plot %>%
 
 
 ### chips
-## HC - Core?
-## OE - OmniExpress?
-## IO - (Infinium)Omni2.5?
-## MG - MEGA?
+## HC - Core
+## OE - OmniExpress
+## IO - (Infinium)Omni2.5
+## MG - MEGA
 
 ### ref panels
 ## 1kg - 1000 Genomes
@@ -119,7 +119,7 @@ lineplot_plotly <- ggplotly(lineplot)
 
 ### how to add interactivity -> reference panel, genotyping array + download?
 ### how to include variant number (required?)
-### how to map correct label (e.g. European - Core (1000 Genomes) [xxx variants])
+### how to map correct label (e.g. Core (1000 Genomes) [xxx variants])
 
 
 ```
