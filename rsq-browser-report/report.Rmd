@@ -1,0 +1,132 @@
+---
+params:
+  file: data_local/mlof.bi.snv.tab.gz
+format:
+  html:
+    pagetitle: "Rsq Browser"
+    body-classes: "bg-light"
+    page-layout: custom
+    embed-resources: true
+    toc: false
+    title-block-style	: none
+    title-block-banner: false
+    date-format: "D MMMM YYYY"  
+    include-before-body: "template/navbar.view.html"  
+    include-after-body: "template/footer.view.html"  
+    include-in-header:
+      - file: template/header.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+### load libraries
+library(Rsamtools)
+library(data.table)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+```
+
+
+```{r load_data, include = FALSE}
+
+### set working directory
+
+## mlof.bi.snv.tab.gz <- file with population = EUR
+
+tabix_file <- params$file
+
+# Create a TabixFile object
+tbx <- TabixFile(tabix_file)
+
+# Define the genomic region(s) of interest
+regions <- GRanges(seqnames = "chr1", ranges = IRanges(start = 10000000, end = 11000000))
+
+# Extract data from the specified regions
+result <- scanTabix(tbx, param = regions)
+
+# Parse the extracted lines into a data frame
+lines <- unlist(result)
+#data <- read.table(text = lines, header = FALSE, sep = "\t")
+data <- fread(text = lines, header = F, sep = "\t")
+
+### extract colnames from file
+col_names <- names(fread(tabix_file, nrows = 0))
+
+### add colnames to the data
+colnames(data) <- col_names
+
+### create MAF column for binning
+data$MAF <- ifelse(data$AF <= 0.5, data$AF, 1-data$AF)
+
+### create bin column with bin information
+data <- data %>%
+  mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.001, 0.002, 0.005, 0.010, 0.015,
+                                    0.020, 0.035, 0.050, 0.100, 0.200, 0.300, 0.400, 0.500),
+                   labels = c(0.0005, 0.001, 0.002, 0.005, 0.01, 0.015, 0.02,
+                              0.035, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)))
+ 
+data_plot <- data %>%
+  ### remove superfluous columns
+  select(-CHR, -POS, -REF, -ALT, -AF, -MAF, -ends_with("_in")) %>%
+  ### tidy up, get into better format for plotting
+  pivot_longer(!bin, names_to = "chip_identifier", values_to = "chip_r2") %>%
+  ### change bin variable to numeric for line plot
+  mutate(bin = as.numeric(as.character(bin))) %>%
+  ### remove rows with missing values (there is only one value column and if this is NA then the row is not informative)
+  na.omit()
+
+### calculate mean for each bin and each unique combination of array and reference panel
+data_plot <- data_plot %>%
+  group_by(bin, chip_identifier) %>%
+  summarize(mean_r2 = mean(chip_r2))
+
+
+### chips
+## HC - Core?
+## OE - OmniExpress?
+## IO - (Infinium)Omni2.5?
+## MG - MEGA?
+
+### ref panels
+## 1kg - 1000 Genomes
+## hrc - HRC
+## top - TOPMed
+
+### combinations: 4 chips x 3 ref_panels x 14 bins = 168 data points for the plot
+
+lineplot <- ggplot(data_plot, aes(x=bin, y=mean_r2, color = chip_identifier)) +
+  ### draw line plot
+  geom_line()+
+  ### highlight actual data points
+  geom_point(shape=0)+
+  ## use log-scale on x-axis and display x-axis labels without trailing zeros
+  scale_x_log10(labels = function(x) as.character(x))+
+  ## manually set y-axis ticks and set limits of the y-axis (include whole range from 0 to 1)
+  scale_y_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), limits = c(0,1))+
+  xlab("Minor Allele Frequency (MAF)")+
+  ylab("Average Imputation Quality")+
+  theme_minimal()
+
+### convert to plotly object
+lineplot_plotly <- ggplotly(lineplot)
+
+
+##### Open questions for this plot #######
+
+### how to add interactivity -> reference panel, genotyping array + download?
+### how to include variant number (required?)
+### how to map correct label (e.g. European - Core (1000 Genomes) [xxx variants])
+
+
+```
+
+## Average Imputation quality by MAF
+
+```{r show_plot, echo=FALSE}
+lineplot_plotly
+```
+

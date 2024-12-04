@@ -32,3 +32,7 @@ hs_err_pid*
 .settings/
 /uploads/
 /queries
+
+# local data for report development and testing
+/rsq-browser-report/data_local/
+/rsq-browser-report/test_local/
