@@ -12,9 +12,9 @@ import io.javalin.http.HandlerType;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-public class ReportShowHandler extends AbstractHandler {
+public class ReportDownloadHandler extends AbstractHandler {
 
-	public static final String PATH = "/reports/{report}";
+	public static final String PATH = "/reports/{report}/report.html";
 
 	public static final HandlerType TYPE = HandlerType.GET;
 
@@ -30,18 +30,15 @@ public class ReportShowHandler extends AbstractHandler {
 
 		if (report != null) {
 
-			String template = "web/reports/show." + report.getStatus().name().toLowerCase() + ".view.html";
+			if (report.getOutput() != null) {
+				context.contentType(ContentType.HTML);
+				context.result(Files.newInputStream(Paths.get(report.getOutput())));
+				return;
+			}
 
-			Page page = new Page(context, template);
-			page.put("report", report);
-			page.put("configuration", configuration);
-			page.put("downloads", configuration.getDownloads());
-			page.render();
-
-
-		} else {
-			throw new Exception("Report not found.");
 		}
+
+		throw new Exception("Report not found.");
 
 	}
 
