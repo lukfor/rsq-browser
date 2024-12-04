@@ -41,10 +41,6 @@ library(plotly)
 
 ```{r load_data, include = FALSE}
 
-### set working directory
-
-## mlof.bi.snv.tab.gz <- file with population = EUR
-
 tabix_file <- params$population_file
 
 # Create a TabixFile object
@@ -94,10 +90,10 @@ data_plot <- data_plot %>%
 
 
 ### chips
-## HC - Core?
-## OE - OmniExpress?
-## IO - (Infinium)Omni2.5?
-## MG - MEGA?
+## HC - Core
+## OE - OmniExpress
+## IO - (Infinium)Omni2.5
+## MG - MEGA
 
 ### ref panels
 ## 1kg - 1000 Genomes
