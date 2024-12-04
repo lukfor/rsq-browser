@@ -34,6 +34,4 @@ hs_err_pid*
 /queries
 
 # local data for report development and testing
-/rsq-browser-report/data_local/
-/rsq-browser-report/test_local/
-/rsq-browser-report/report_files/
+/local_files/

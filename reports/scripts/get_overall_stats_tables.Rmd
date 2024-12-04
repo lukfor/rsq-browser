@@ -1,0 +1,48 @@
+---
+format:
+  html:
+    pagetitle: "Rsq Browser"
+    body-classes: "bg-light"
+    page-layout: custom
+    embed-resources: true
+    toc: false
+    title-block-style	: none
+    title-block-banner: false
+    date-format: "D MMMM YYYY"  
+    include-before-body: "template/navbar.view.html"  
+    include-after-body: "template/footer.view.html"  
+    include-in-header:
+      - file: template/header.html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+### load libraries
+library(Rsamtools)
+library(data.table)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+```
+
+
+```{r load_data, include = FALSE}
+
+## mlof.bi.snv.tab.gz <- file with population = EUR
+
+eur_data <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz")
+
+
+
+
+```
+
+
+
+```{r show_table, echo=FALSE}
+
+```
+
