@@ -141,6 +141,38 @@ public class Report implements Runnable {
 			//RMarkdownScript rMarkdownScript = new RMarkdownScript(report, params, output);
 			//rMarkdownScript.run();
 
+			List<String> genes_coordinates = new ArrayList<>();
+			if (params.containsKey("genes")) {
+				Object genes = params.get("genes");
+				if (genes instanceof  String) {
+					GenomicRegion region = GenomicRegion.parse(genes.toString(), "hg38");
+					genes_coordinates.add(region.toString());
+					List<String> list = new ArrayList<>();
+					list.add(genes.toString());
+					params.put("genes", list);
+				}
+				if (genes instanceof  List) {
+					for (Object gene: (List) genes) {
+						GenomicRegion region = GenomicRegion.parse(gene.toString(), "hg38");
+						genes_coordinates.add(region.toString());
+					}
+				}
+			}
+			params.put("genes_coordinates", genes_coordinates);
+			/*if (params.containsKey("snps")) {
+				Object snps = params.get("snps");
+				if (snps instanceof  String) {
+					GenomicRegion region = GenomicRegion.parse(snps.toString(), "hg38");
+					regions.add(region.toString());
+				}
+				if (snps instanceof  List) {
+					for (Object snp: (List) snps) {
+						GenomicRegion region = GenomicRegion.parse(snp.toString(), "hg38");
+						regions.add(region.toString());
+					}
+				}
+			}*/
+
 
 			String output = getId() + ".html";
 			Quarto quarto = new Quarto(report, params, output, workspaceDir);

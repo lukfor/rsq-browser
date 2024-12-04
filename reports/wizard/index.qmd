@@ -19,6 +19,7 @@ params:
   genotyped: yes
   chip: MEGA
   genes: LPA
+  genes_coordinates: 6:1111-2222
   upload_permission: no
   population: eur
   population_file: data_local/mlof.bi.snv.tab.gz

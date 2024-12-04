@@ -137,7 +137,7 @@ public class GenomicRegion {
 			return location;
 		}
 
-		throw new IOException("Unknown format.");
+		throw new IOException("Unknown format: " + string);
 	}
 
 	public static String chromosome(String chromosome, String build) {
