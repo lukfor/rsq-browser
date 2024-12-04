@@ -9,8 +9,8 @@ import genepi.r2browser.web.handlers.downloads.DownloadListHandler;
 import genepi.r2browser.web.handlers.downloads.FileDetailsHandler;
 import genepi.r2browser.web.handlers.queries.QueriesCreateHandler;
 import genepi.r2browser.web.handlers.queries.QueriesShowHandler;
-import genepi.r2browser.web.handlers.wizard.ReportCreateHandler;
-import genepi.r2browser.web.handlers.wizard.ReportShowHandler;
+import genepi.r2browser.web.handlers.reports.ReportCreateHandler;
+import genepi.r2browser.web.handlers.reports.ReportShowHandler;
 import genepi.r2browser.web.util.AbstractErrorHandler;
 import genepi.r2browser.web.util.AbstractWebApp;
 

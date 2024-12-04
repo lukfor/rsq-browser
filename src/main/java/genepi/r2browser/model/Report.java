@@ -6,22 +6,26 @@ import com.google.gson.JsonSyntaxException;
 import genepi.io.FileUtil;
 import genepi.io.table.writer.CsvTableWriter;
 import genepi.r2browser.tasks.ExtractVariantsTask;
+import genepi.r2browser.tasks.Quarto;
+import genepi.r2browser.tasks.RMarkdownScript;
 import genepi.r2browser.util.GenomicRegion;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Report implements Runnable {
+
+	public static final String WIZARD_REPORT = "reports/wizard";
 
 	private String id;
 
 	private String rmd;
 
-	private Map<String, List<String>> params;
+	private Map<String, Object> params;
 
 	private Date submittedOn;
 
@@ -30,6 +34,8 @@ public class Report implements Runnable {
 	private Date expiresOn;
 
 	private long executionTime;
+
+	private String output = null;
 
 	private String error;
 
@@ -47,11 +53,11 @@ public class Report implements Runnable {
 		this.id = id;
 	}
 
-	public void setParams(Map<String, List<String>> params) {
+	public void setParams(Map<String, Object> params) {
 		this.params = params;
 	}
 
-	public Map<String, List<String>> getParams() {
+	public Map<String, Object> getParams() {
 		return params;
 	}
 
@@ -111,6 +117,14 @@ public class Report implements Runnable {
 		return status;
 	}
 
+	public void setOutput(String output) {
+		this.output = output;
+	}
+
+	public String getOutput() {
+		return output;
+	}
+
 	public void run() {
 
 		setStatus(QueryStatus.RUNNING);
@@ -120,15 +134,24 @@ public class Report implements Runnable {
 		try {
 
 			long start = System.currentTimeMillis();
-			
 
-			//TODO: render report
+			Path report = new File(WIZARD_REPORT).getAbsoluteFile().toPath();
+			Path workspaceDir = new File(_workspace, getId()).getAbsoluteFile().toPath();
+
+			//RMarkdownScript rMarkdownScript = new RMarkdownScript(report, params, output);
+			//rMarkdownScript.run();
+
+
+			String output = getId() + ".html";
+			Quarto quarto = new Quarto(report, params, output, workspaceDir);
+			quarto.render();
 
 			long end = System.currentTimeMillis();
 
 			setExecutionTime(end - start);
 			setFinisehdOn(new Date());
 			setStatus(QueryStatus.SUCCEDED);
+			setOutput(FileUtil.path(_workspace, getId(), output));
 			Report.save(this, _workspace);
 
 		} catch (Exception e) {

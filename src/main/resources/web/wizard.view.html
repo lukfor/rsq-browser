@@ -13,21 +13,20 @@
         <form id="genotypingForm" action="{{routeUrl("reports_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
             <!-- Population Selection -->
             <div class="form-group">
-                <label for="populationSelect">What is the population of your study?</label>
-                <select class="form-control" id="populationSelect" name="population" required>
+                <label for="population">What is the population of your study?</label>
+                <select class="form-control" id="population" name="population" required>
                     <option value="" disabled selected>Select a population</option>
-                    <option value="european">European</option>
-                    <option value="african">African</option>
-                    <option value="asian">Asian</option>
-                    <option value="american">American</option>
-                    <option value="other">Other</option>
+                    <option value="eur">European</option>
+                    <option value="afr">African</option>
+                    <option value="fin">Finnish</option>
+                    <option value="his/lat">Hispanic/Latino</option>
                 </select>
             </div>
 
             <!-- Data Upload Permission -->
             <div class="form-group">
-                <label for="uploadPermission">Is it allowed to upload data to an external server?</label>
-                <select class="form-control" id="uploadPermission" name="uploadPermission" required>
+                <label for="upload_permission">Is it allowed to upload data to an external server?</label>
+                <select class="form-control" id="upload_permission" name="upload_permission" required>
                     <option value="" disabled selected>Select an option</option>
                     <option value="yes">Yes</option>
                     <option value="yes_europe">Yes, but the server has to be located in Europe</option>
@@ -37,8 +36,8 @@
 
             <!-- Genotyped Data -->
             <div class="form-group">
-                <label for="genotypedData">Have you already genotyped your data?</label>
-                <select class="form-control" id="genotypedData" name="genotypedData" required>
+                <label for="genotyped">Have you already genotyped your data?</label>
+                <select class="form-control" id="genotyped" name="genotyped" required>
                     <option value="" disabled selected>Select an option</option>
                     <option value="yes">Yes</option>
                     <option value="no">No</option>
@@ -47,8 +46,8 @@
 
             <!-- Chip Selection (Only shows if data is genotyped) -->
             <div class="form-group" id="chipSelection" style="display: none;">
-                <label for="chipSelect">Which genotyping chip was used?</label>
-                <select class="form-control" id="chipSelect" name="chipSelect">
+                <label for="chip">Which genotyping chip was used?</label>
+                <select class="form-control" id="chip" name="chip">
                     <option value="" disabled selected>Select a chip</option>
                     <option value="HC">Core</option>
                     <option value="OE">OmniExpress</option>
@@ -76,8 +75,8 @@
 
             <!-- Rare Variant Analysis -->
             <div class="form-group">
-                <label for="rareVariantAnalysis">Do you need rare variant analysis?</label>
-                <select class="form-control" id="rareVariantAnalysis" name="rareVariantAnalysis" required>
+                <label for="rare_variant_analysis">Do you need rare variant analysis?</label>
+                <select class="form-control" id="rare_variant_analysis" name="rare_variant_analysis" required>
                     <option value="" disabled selected>Select an option</option>
                     <option value="yes">Yes</option>
                     <option value="no">No</option>
@@ -106,13 +105,13 @@
     $(document).ready(function () {
            // Function to check form validity
            function checkFormValidity() {
-               const population = $('#populationSelect').val();
-               const uploadPermission = $('#uploadPermission').val();
+               const population = $('#population').val();
+               const uploadPermission = $('#upload_permission').val();
                const genes = $('#genesInput').val().trim();
                const snps = $('#snpsInput').val().trim();
-               const rareVariantAnalysis = $('#rareVariantAnalysis').val();
-               const genotypedData = $('#genotypedData').val();
-               const chipSelect = $('#chipSelect').val();
+               const rareVariantAnalysis = $('#rare_variant_analysis').val();
+               const genotypedData = $('#genotyped').val();
+               const chipSelect = $('#chip').val();
 
                // Enable submit if all required fields are filled
                if (population && uploadPermission && genes && snps && rareVariantAnalysis && genotypedData && (genotypedData === 'no' || chipSelect)) {
@@ -141,13 +140,13 @@
 
            // Example button functionality
            $('#exampleButton').click(function () {
-               $('#populationSelect').val('european');
-               $('#uploadPermission').val('yes');
+               $('#population').val('eur');
+               $('#upload_permission').val('yes');
                $('#genesInput').val('BRCA1\nTP53');
                $('#snpsInput').val('rs123456\nrs7891011');
-               $('#rareVariantAnalysis').val('yes');
-               $('#genotypedData').val('yes');
-               $('#chipSelect').val('IO'); // Omni 2.5M selected
+               $('#rare_variant_analysis').val('yes');
+               $('#genotyped').val('yes');
+               $('#chip').val('IO'); // Omni 2.5M selected
                $('#chipSelection').show();
 
                // Trigger validation after filling example values
@@ -156,13 +155,13 @@
 
              // Example button for CAD Study
            $('#cadExampleButton').click(function () {
-               $('#populationSelect').val('european');
-               $('#uploadPermission').val('yes');
+               $('#population').val('eur');
+               $('#upload_permission').val('yes');
                $('#genesInput').val('LDLR\nAPOE\nLPA');
                $('#snpsInput').val('rs10455872\nrs1122608');
-               $('#rareVariantAnalysis').val('no');
-               $('#genotypedData').val('no');
-               $('#chipSelect').val('');
+               $('#rare_variant_analysis').val('no');
+               $('#genotyped').val('no');
+               $('#chip').val('');
                $('#chipSelection').hide();
                // Trigger validation after filling example values
                checkFormValidity();
