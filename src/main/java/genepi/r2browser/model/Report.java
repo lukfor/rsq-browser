@@ -5,10 +5,12 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import genepi.io.FileUtil;
 import genepi.io.table.writer.CsvTableWriter;
+import genepi.r2browser.App;
 import genepi.r2browser.tasks.ExtractVariantsTask;
 import genepi.r2browser.tasks.Quarto;
 import genepi.r2browser.tasks.RMarkdownScript;
 import genepi.r2browser.util.GenomicRegion;
+import genepi.r2browser.web.WebApp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -141,12 +143,12 @@ public class Report implements Runnable {
 			//RMarkdownScript rMarkdownScript = new RMarkdownScript(report, params, output);
 			//rMarkdownScript.run();
 
-			List<String> genes_coordinates = new ArrayList<>();
+			List<String> genesCoordinates = new ArrayList<>();
 			if (params.containsKey("genes")) {
 				Object genes = params.get("genes");
 				if (genes instanceof  String) {
 					GenomicRegion region = GenomicRegion.parse(genes.toString(), "hg38");
-					genes_coordinates.add(region.toString());
+					genesCoordinates.add(region.toString());
 					List<String> list = new ArrayList<>();
 					list.add(genes.toString());
 					params.put("genes", list);
@@ -154,36 +156,46 @@ public class Report implements Runnable {
 				if (genes instanceof  List) {
 					for (Object gene: (List) genes) {
 						GenomicRegion region = GenomicRegion.parse(gene.toString(), "hg38");
-						genes_coordinates.add(region.toString());
+						genesCoordinates.add(region.toString());
 					}
 				}
 			}
-			params.put("genes_coordinates", genes_coordinates);
-			/*if (params.containsKey("snps")) {
+			params.put("genes_coordinates", genesCoordinates);
+
+			List<String> snpsCoordinates = new ArrayList<>();
+			if (params.containsKey("snps")) {
 				Object snps = params.get("snps");
 				if (snps instanceof  String) {
 					GenomicRegion region = GenomicRegion.parse(snps.toString(), "hg38");
-					regions.add(region.toString());
+					snpsCoordinates.add(region.toString());
+					List<String> list = new ArrayList<>();
+					list.add(snps.toString());
+					params.put("snps", list);
 				}
 				if (snps instanceof  List) {
 					for (Object snp: (List) snps) {
 						GenomicRegion region = GenomicRegion.parse(snp.toString(), "hg38");
-						regions.add(region.toString());
+						snpsCoordinates.add(region.toString());
 					}
 				}
-			}*/
+			}
+			params.put("snps_coordinates", snpsCoordinates);
 
 
 			String output = getId() + ".html";
 			Quarto quarto = new Quarto(report, params, output, workspaceDir);
-			quarto.render();
+			boolean success = quarto.render();
 
 			long end = System.currentTimeMillis();
-
 			setExecutionTime(end - start);
 			setFinisehdOn(new Date());
-			setStatus(QueryStatus.SUCCEDED);
-			setOutput(FileUtil.path(_workspace, getId(), output));
+			if (success) {
+				setStatus(QueryStatus.SUCCEDED);
+				setOutput(FileUtil.path(_workspace, getId(), output));
+			} else {
+				setStatus(QueryStatus.FAILED);
+				setError("Rendering failed.<br><pre>" + quarto.getStdErr() + "</pre>");
+			}
 			Report.save(this, _workspace);
 
 		} catch (Exception e) {

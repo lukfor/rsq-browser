@@ -12,6 +12,9 @@ public class Quarto {
     private String output;
     private Map<String, Object> params;
     private Path workspacePath;
+    // Fields to store stdout and stderr
+    private String stdOut = "";
+    private String stdErr = "";
 
     public Quarto(Path qmdFilePath, Map<String, Object> params, String output, Path workspacePath) {
         this.qmdFilePath = qmdFilePath;
@@ -48,7 +51,7 @@ public class Quarto {
         });
     }
 
-    public void render() throws IOException, InterruptedException {
+    public boolean render() throws IOException, InterruptedException {
         if (!Files.exists(qmdFilePath)) {
             throw new FileNotFoundException("Quarto folder not found: " + qmdFilePath);
         }
@@ -77,24 +80,36 @@ public class Quarto {
         processBuilder.directory(workspacePath.toFile());  // Set the workspace as the working directory
 
         Process process = processBuilder.start();
-        int exitCode = process.waitFor();
-
+        // Capture stdout
+        StringBuilder stdoutBuilder = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+                stdoutBuilder.append(line).append("\n");
             }
         }
+        stdOut = stdoutBuilder.toString();
 
+        // Capture stderr
+        StringBuilder stderrBuilder = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.err.println(line);
+                stderrBuilder.append(line).append("\n");
             }
         }
+        stdErr = stderrBuilder.toString();
 
-        if (exitCode != 0) {
-            throw new RuntimeException("Quarto rendering failed with exit code: " + exitCode);
-        }
+        int exitCode = process.waitFor();
+
+        return exitCode == 0;
+    }
+
+    public String getStdErr() {
+        return stdErr;
+    }
+
+    public void setStdOut(String stdOut) {
+        this.stdOut = stdOut;
     }
 }
