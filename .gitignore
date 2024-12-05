@@ -36,3 +36,4 @@ hs_err_pid*
 # local data for report development and testing
 /local_files/
 /.idea/
+/reports/wizard/index.html
