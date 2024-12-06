@@ -334,8 +334,9 @@ if (length(params$snps) != 0) {
   ## get datatable with appropriate styling
   ## TODO: adjust styling/options!!
   styled_snp_table <- list(datatable(snp_data,
-                                     extensions = 'RowGroup',
-                                     options = list(rowGroup = list(dataSrc = 1))) %>%
+                                     extensions = 'RowGroup', ### use rowgroup extension
+                                     options = list(rowGroup = list(dataSrc = 1), ### group rows by SNP (first column)
+                                                    columnDefs = list(list(visible = F, targets = 1)))) %>% ### hide first column from display
       ### set custom format for selected columns
       formatStyle(c('r2'),
                 backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
