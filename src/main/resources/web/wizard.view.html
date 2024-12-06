@@ -10,7 +10,12 @@
 
         <hr class="m-5">
 
-        <form id="genotypingForm" action="{{routeUrl("reports_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
+        <div class="form-example-container">
+            <!-- Form Section -->
+            <div class="form-section">
+
+
+            <form id="genotypingForm" action="{{routeUrl("reports_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
             <!-- Population Selection -->
             <div class="form-group">
                 <label for="population">What is the population of your study?</label>
@@ -87,18 +92,21 @@
 
             <!-- Submit Button -->
             <button type="submit" class="btn btn-primary" id="submitButton" disabled>Submit</button>
-            <br><br>
-            <h3>No data at hand? Try one of our examples</h3>
-
-            <b>Breast Cancer Study:</b> Breast cancer is one of the most common cancers affecting women worldwide. It is characterized by the uncontrolled growth of cells in the breast tissue, which can spread to other parts of the body. Genetic factors, such as mutations in the BRCA1 and TP53 genes, are known to increase the risk of developing breast cancer. Understanding genetic variants and SNPs associated with breast cancer can provide insights into its susceptibility, diagnosis, and potential treatment options. Studies on rare variants can help identify novel genetic risk factors for more personalized medicine.
-            <br><button type="button" class="btn btn-secondary ml-2" id="exampleButton">Fill Form</button>
-            <hr>
-
-            <b>Coronary Artery Disease (CAD) Study:</b> Coronary artery disease (CAD) refers to the narrowing or blockage of the coronary arteries, usually due to the build-up of plaque, which can lead to heart attacks or other cardiovascular problems. Key genes like LDLR (Low-Density Lipoprotein Receptor) and APOE (Apolipoprotein E) play a crucial role in lipid metabolism and cholesterol regulation, both of which are important in the development of CAD. Studying SNPs such as rs10455872 and rs1122608 can help researchers understand the genetic underpinnings of CAD and improve strategies for prevention, early detection, and treatment. Although rare variant analysis is often critical in other diseases, it may not always be necessary for CAD studies, as common variants may play a more significant role.
-            <br><button type="button" class="btn btn-secondary ml-2" id="cadExampleButton">Fill Form</button>
-
         </form>
-    </div>
+        </div>
+            <!-- Examples Section -->
+            <div class="examples-section">
+                <h4>No data at hand? Try one of our examples</h4>
+
+                <b>Breast Cancer Study:</b> Genetic factors, such as mutations in the BRCA1 and TP53 genes, are known to increase the risk of developing breast cancer. Understanding genetic variants and SNPs associated with breast cancer can provide insights into its susceptibility, diagnosis, and potential treatment options. Studies on rare variants can help identify novel genetic risk factors for more personalized medicine.
+                <br><button type="button" class="btn btn-secondary ml-2" id="exampleButton">Fill Form</button>
+                <hr>
+
+                <p></p><b>Coronary Artery Disease (CAD) Study:</b> Key genes like LDLR (Low-Density Lipoprotein Receptor) and APOE (Apolipoprotein E) play a crucial role in lipid metabolism and cholesterol regulation, both of which are important in the development of CAD. Studying SNPs such as rs10455872 and rs1122608 can help researchers understand the genetic underpinnings of CAD and improve strategies for prevention, early detection, and treatment. Although rare variant analysis is often critical in other diseases, it may not always be necessary for CAD studies, as common variants may play a more significant role.</p>
+                <p class="align-center"><button type="button" class="btn btn-secondary ml-2" id="cadExampleButton">Fill Form</button></p>
+            </div>
+        </div>
+        </div>
 </div>
 
 <script>
