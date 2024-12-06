@@ -145,13 +145,11 @@ tabix_file <- params$population_file
 # Create a TabixFile object
 tbx <- TabixFile(tabix_file)
 
-### extract colnames from file (since users have to specify population -> always only one input population_file)
-col_names <- names(fread(tabix_file, nrows = 0))
-#write.table(col_names, "colnames.txt", row.names = F, col.names = F)
+# Read the first line of the file = column names (NOTE: much faster than fread() in this case!)
+header <- readLines(gzfile(tabix_file), n = 1)
 
-## faster -> read colnames from fixed colnames.txt file - TODO: create .txt files for all population files
-#col_names <- as.character(unlist(fread("colnames.txt", header = F)))
-
+# Extract column names from first line
+col_names <- strsplit(header, "\t")[[1]]
 
 # instantiate empty dataframe where statistics will be collected per gene per array and per reference panel
 #gene_stats_all <- data.frame()
@@ -201,7 +199,12 @@ for (i in 1:length(params$genes_coordinates)) {
   html_list <- append(html_list, header)
   
   ## get datatable with appropriate styling
-  styled_table <- list(datatable(gene_stats_temp, caption = "") %>%
+  styled_table <- list(datatable(gene_stats_temp, options = list(
+    pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
+    lengthChange = F, ## remove "Show entries" dropdown
+    paging = F ## disable pagination of Table (not required when all rows are shown)
+  )) %>%
+    ### set custom format for selected columns
     formatStyle(c('mean_r2_ultra_rare', 'mean_r2_rare', 'mean_r2_low_freq', 'mean_r2_common'),
               backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
               color = c("white")))
@@ -220,12 +223,6 @@ tagList(html_list)
 
 ```
 
-
-
-```{r show_table, include=FALSE}
-
-
-```
 
 
 
