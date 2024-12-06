@@ -15,6 +15,7 @@ import genepi.r2browser.web.WebApp;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.lang.reflect.WildcardType;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
