@@ -17,6 +17,9 @@ params:
   snps:
   - rs123456
   - rs7891011
+  snps_coordinates: 
+  - chr6:160589086-160589086
+  - chr19:11052925-11052925
   rare_variant_analysis: yes
   genotyped: yes
   chip: IO
@@ -129,10 +132,16 @@ get_gene_statistics <- function(input_df, gene_name) {
     stats <- rbind(stats, stats_temp)
   }
   
+  ### if user selected one or more arrays (chip parameter) -> filter for these arrays
+  if (params$genotyped == TRUE) {
+    stats <- stats %>%
+      filter(genotyping_array == params$chip)
+  }
+  
+  
   return(stats)
   
 }
-
 
 
 
