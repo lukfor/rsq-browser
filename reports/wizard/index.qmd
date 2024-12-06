@@ -15,13 +15,13 @@ format:
       - file: template/header.html
 params:
   snps:
-  - rs123456
-  - rs7891011
+  - rs10455872
+  - rs1122608
   snps_coordinates: 
   - chr6:160589086-160589086
   - chr19:11052925-11052925
   rare_variant_analysis: yes
-  genotyped: yes
+  genotyped: no
   chip: IO
   genes:
   - BRCA1
@@ -59,7 +59,6 @@ library(htmltools) ### TODO: check if it is in the conda environment!
 
 ### define function to get gene-level statistics for each combination of genotyping array and reference panel
 get_gene_statistics <- function(input_df, gene_name) {
-  
   
   ## prepare data for statistics where bins do NOT matter
   data_pivoted_temp <- input_df %>%
@@ -138,10 +137,75 @@ get_gene_statistics <- function(input_df, gene_name) {
       filter(genotyping_array == params$chip)
   }
   
+  return(stats)
+  
+}
+
+
+get_snp_statistics <- function(input_df, snp_name) {
+  
+  ## prepare data for statistics where bins do NOT matter
+  data_pivoted_temp <- input_df %>%
+    ## remove superfluous columns
+    select(-CHR, -POS, -REF, -ALT, -AF, -ends_with("_in")) %>%
+    ## tidy up, get better format for reporting
+    pivot_longer(cols = everything(), names_to = "identifier", values_to = "r2") %>%
+    ## remove empty rows (SNP not measured)
+    na.omit()
+  
+  ## get unique combinations of genotyping array and reference panel
+  array_ref_ids <- unique(data_pivoted_temp$identifier)
+  
+  ## instantiate empty dataframe where results will be collected
+  stats <- data.frame()
+  
+  ## iterate over all unique combinations of genotyping array and reference panel
+  for (i in 1:length(array_ref_ids)) {
+    
+    ## get array name from identifier
+    genotyping_array <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][1]
+    
+    ## get reference panel name from identifier 
+    ref_panel_name <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][2]
+    
+    ## get only data concerning a specific combination of genotyping array and reference panel
+    ref_data_subset <- data_pivoted_temp %>%
+      filter(identifier == array_ref_ids[i])
+    
+    ## check if variant is captured for each combination
+    ## due to na.omit() before we will have an empty df if the SNP is not measured, otherwise it was measured
+    if (nrow(ref_data_subset) == 0) {
+      included <- "no" ## if df is empty -> SNP not present
+      r2 <- NA
+    } else {
+      included <- "yes" ## if df is not empty -> SNP is present
+      r2 <- ref_data_subset$r2
+    }
+    
+    
+    ### collect information for one specific combi in a dataframe
+    rsID <- snp_name
+    stats_temp <- as.data.frame(rsID)
+    stats_temp$genotyping_array <- genotyping_array
+    stats_temp$ref_panel <-ref_panel_name
+    stats_temp$included <- included
+    stats_temp$r2 <- r2
+ 
+    
+    ## Collect data in one dataframe
+    stats <- rbind(stats, stats_temp)
+  }
+  
+  ### if user selected one or more arrays (chip parameter) -> filter for these arrays
+  if (params$genotyped == TRUE) {
+    stats <- stats %>%
+      filter(genotyping_array == params$chip)
+  }
   
   return(stats)
   
 }
+
 
 
 
@@ -221,6 +285,66 @@ for (i in 1:length(params$genes_coordinates)) {
   html_list <- append(html_list, styled_table)
 
 }
+
+
+## generate SNP table and corresponding header ONLY if the user requested at least one SNP
+## if no SNPs are chosen by user we get an empty list for the snp parameter
+if (length(params$snps) != 0) {
+  
+  snp_table_header <- list(tags$h2("Custom SNPs"))
+  
+  ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
+  html_list <- append(html_list, snp_table_header)
+  
+  ### for SNPS one common table (in contrast to genes) -> collect data in df outside the snps_coordinates for loop
+  snp_data <- data.frame()
+  
+  
+  ### iterate over all custom SNPs desired by the user with snps_coordinates parameter
+  for (i in 1:length(params$snps_coordinates)) {
+    
+    ## get the corresponding snp name
+    snp <- params$snps[i]
+    
+    ## get coordinates as CHR/START/STOP from snps_coordinates input parameter
+    chr_temp <- strsplit(params$snps_coordinates[i], split=":", fixed = T)[[1]][1]
+    coord_temp <- strsplit(params$snps_coordinates[i], split=":", fixed = T)[[1]][2]
+    start_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][1])
+    stop_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][2])
+    
+    ## Define genomnic regions of interest
+    region_temp <- GRanges(seqnames = chr_temp, ranges = IRanges(start = start_pos_temp, end = stop_pos_temp))
+    
+    ## Extract data from the specified regions
+    result_temp <- scanTabix(tbx, param = region_temp)
+    
+    ## Parse the extracted lines into a data frame
+    lines <- unlist(result_temp)
+    data_temp <- fread(text = lines, header = F, sep = "\t")
+    colnames(data_temp) <- col_names
+    
+    ## for each snp (e.g. each set of snp coordinates) get useful statistics
+    snp_stats_temp <- get_snp_statistics(data_temp, snp)
+    
+    ## collect SNP statistics in one dataframe using rbind()
+    snp_data <- rbind(snp_data, snp_stats_temp)
+  
+  }
+  
+  ## get datatable with appropriate styling
+  ## TODO: adjust styling/options!!
+  styled_snp_table <- list(datatable(snp_data,
+                                     extensions = 'RowGroup',
+                                     options = list(rowGroup = list(dataSrc = 1))) %>%
+      ### set custom format for selected columns
+      formatStyle(c('r2'),
+                backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
+                color = c("white")))
+  
+  html_list <- append(html_list, styled_snp_table)
+  
+}
+
 
 ### remove temporary objects, which are no longer required (lines + objects whose names end with "temp")
 rm(list = grep("temp$", ls(), value=T))
