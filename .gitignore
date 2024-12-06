@@ -37,3 +37,6 @@ hs_err_pid*
 /local_files/
 /.idea/
 /reports/wizard/index.html
+/reports/wizard/testing_files/
+/reports/wizard/testing*
+/reports/wizard/colnames.txt

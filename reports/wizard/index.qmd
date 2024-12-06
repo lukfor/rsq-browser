@@ -42,11 +42,15 @@ library(dplyr)
 library(ggplot2)
 library(plotly)
 library(DT) ### TODO: add to conda environment!
+library(htmltools) ### TODO: check if it is in the conda environment!
+
 
 ```
 
 
-```{r load_data, include = FALSE}
+## Imputation Quality for genes by genotyping array and reference panel
+
+```{r load_data, echo = FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 ######## FUNCTIONS #########
 
@@ -91,7 +95,7 @@ get_gene_statistics <- function(input_df, gene_name) {
   for (i in 1:length(array_ref_ids)) {
     
     ## get array name from identifier
-    array_name <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][1]
+    genotyping_array <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][1]
     
     ## get reference panel name from identifier 
     ref_panel_name <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][2]
@@ -109,9 +113,10 @@ get_gene_statistics <- function(input_df, gene_name) {
     prop_hq_var <- round(nrow(ref_data_subset[ref_data_subset$r2 >= 0.8, ])/nr_var,3)
     
     ### collect information for one specific combi in a dataframe
-    gene <- gene_name
-    stats_temp <- as.data.frame(gene)
-    stats_temp$array <- array_name
+    #gene <- gene_name
+    #stats_temp <- as.data.frame(gene)
+    stats_temp <- as.data.frame(genotyping_array)
+    #stats_temp$array <- array_name
     stats_temp$ref_panel <-ref_panel_name
     stats_temp$nr_variants <- nr_var
     stats_temp$prop_hq_variants <- prop_hq_var
@@ -142,11 +147,20 @@ tbx <- TabixFile(tabix_file)
 
 ### extract colnames from file (since users have to specify population -> always only one input population_file)
 col_names <- names(fread(tabix_file, nrows = 0))
+#write.table(col_names, "colnames.txt", row.names = F, col.names = F)
+
+## faster -> read colnames from fixed colnames.txt file - TODO: create .txt files for all population files
+#col_names <- as.character(unlist(fread("colnames.txt", header = F)))
 
 
 # instantiate empty dataframe where statistics will be collected per gene per array and per reference panel
-gene_stats_all <- data.frame()
+#gene_stats_all <- data.frame()
 
+# Create a list, where everything is collected, which should be displayed in the html report
+html_list <- list()
+
+
+### iterate over all genes with genes_coordinates parameter
 for (i in 1:length(params$genes_coordinates)) {
   
   ## get gene name
@@ -178,33 +192,41 @@ for (i in 1:length(params$genes_coordinates)) {
                     labels = c("ultra_rare", "rare", "low_frequency", "common")))
   
   
-  ### for each gene (e.g. each set of gene coordinates) get useful statistics
+  ## for each gene (e.g. each set of gene coordinates) get useful statistics
   gene_stats_temp <- get_gene_statistics(data_temp, gene)
   
-  ## Collect data in one dataframe
-  gene_stats_all <- rbind(gene_stats_all, gene_stats_temp)
+  ## get Table header in the markdown format of h2 and set content to gene name
+  header <- list(tags$h2(gene))
+  ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
+  html_list <- append(html_list, header)
+  
+  ## get datatable with appropriate styling
+  styled_table <- list(datatable(gene_stats_temp, caption = "") %>%
+    formatStyle(c('mean_r2_ultra_rare', 'mean_r2_rare', 'mean_r2_low_freq', 'mean_r2_common'),
+              backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
+              color = c("white")))
+  
+  html_list <- append(html_list, styled_table)
+
 }
 
 ### remove temporary objects, which are no longer required (lines + objects whose names end with "temp")
 rm(list = grep("temp$", ls(), value=T))
 rm(lines)
 
-```
-
-## Imputation Quality for genes by genotyping array and reference panel
-
-```{r show_table, echo=FALSE}
-datatable(gene_stats_all) %>%
-  formatStyle(c('mean_r2_ultra_rare', 'mean_r2_rare', 'mean_r2_low_freq', 'mean_r2_common'),
-              backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
-              color = c("white"))
-
-```
-
-
-```{r old_code, include=FALSE}
-
+### render everything with tagList - CAVE: only works correctly when called OUTSIDE for loop (top level)
+tagList(html_list)
 
 
 ```
+
+
+
+```{r show_table, include=FALSE}
+
+
+```
+
+
+
 
