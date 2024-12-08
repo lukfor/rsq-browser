@@ -10,27 +10,41 @@ public class CondaEnvManager {
     private final String condaEnvYaml;
     private final String cacheDirectory;
     private final String tool;
-    private String stdOut = "";
-    private String stdErr = "";
-
+    private String binary = null;
     private File workingDirectory;
+    private File stdoutFile;
+    private File stderrFile;
 
     public CondaEnvManager(String condaEnvYaml, String cacheDirectory, String tool) {
         this.condaEnvYaml = condaEnvYaml;
         this.cacheDirectory = cacheDirectory;
         this.tool = tool;
+        if (tool.equalsIgnoreCase("micromamba")) {
+            binary = new BinaryFinder("micromamba").env("MICROMAMBA_HOME").envPath().path("/usr/local/bin").find();
+        } else if (tool.equalsIgnoreCase("mamba")) {
+            binary = new BinaryFinder("mamba").env("MAMBA_HOME").envPath().path("/usr/local/bin").find();
+        } else if (tool.equalsIgnoreCase("conda")) {
+            binary = new BinaryFinder("conda").env("CONDA_HOME").envPath().path("/usr/local/bin").find();
+        }
     }
 
     public int executeWithEnv(String command) throws Exception {
+
+        if (binary == null) {
+            throw new RuntimeException("Binary for tool " + tool + " not found.");
+        }
+
         String hash = generateHash(new File(condaEnvYaml));
         String envFolder = new File(cacheDirectory + File.separator + "env-" + hash).getAbsolutePath();
 
+        writeToOutput("Use " + tool  + " installed in " + binary + "\n");
+
         File envDir = new File(envFolder);
         if (envDir.exists() && envDir.isDirectory()) {
-            System.out.println("Environment already exists. Activating...");
+            writeToOutput("Environment already exists. Activating...\n");
             return activateAndExecute(envFolder, command);
         } else {
-            System.out.println("Environment not found. Creating new environment...");
+            writeToOutput("Environment not found. Creating new environment...\n");
             createEnvironment(envFolder);
             return activateAndExecute(envFolder, command);
         }
@@ -53,59 +67,81 @@ public class CondaEnvManager {
     }
 
     private void createEnvironment(String envFolder) throws IOException, InterruptedException {
-        String createCommand = tool + " env create --yes -f " + condaEnvYaml + " --prefix " + envFolder;
-        ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", "PATH=$PATH:$HOME/.local/bin " + createCommand);
-        processBuilder.inheritIO();
+        String options = "";
+        if (tool.equalsIgnoreCase("micromamba")) {
+            options = "--yes";
+        }
+        String createCommand = binary + " env create " + options + " --file " + condaEnvYaml + " --prefix " + envFolder;
+        ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", createCommand);
+
+        writeToOutput("Executing command: " + createCommand + "\n");
+
         Process process = processBuilder.start();
+        appendStreamToFile(process.getInputStream(), stdoutFile);
+        appendStreamToFile(process.getErrorStream(), stderrFile);
+
         int exitCode = process.waitFor();
-        System.out.println(createCommand);
         if (exitCode != 0) {
+            writeToOutput("Failed to create the environment using " + tool + "\n");
             throw new RuntimeException("Failed to create the environment using " + tool);
         }
+        writeToOutput("Environment created successfully.\n");
     }
 
     private int activateAndExecute(String envFolder, String command) throws IOException, InterruptedException {
-        String activateCommand = tool + " run -p " + envFolder + " " + command;
+        String activateCommand = binary + " run --prefix " + envFolder + " " + command;
+        writeToOutput("Executing command: " + activateCommand + "\n");
 
-        ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", "PATH=$PATH:$HOME/.local/bin " + activateCommand);
-        processBuilder.inheritIO();
+        ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", activateCommand);
         if (workingDirectory != null) {
             processBuilder.directory(workingDirectory);
         }
+
         Process process = processBuilder.start();
-        // Capture stdout
-        StringBuilder stdoutBuilder = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stdoutBuilder.append(line).append("\n");
-            }
-        }
-        stdOut = stdoutBuilder.toString();
-
-        // Capture stderr
-        StringBuilder stderrBuilder = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stderrBuilder.append(line).append("\n");
-            }
-        }
-        stdErr = stderrBuilder.toString();
-
+        appendStreamToFile(process.getInputStream(), stdoutFile);
+        appendStreamToFile(process.getErrorStream(), stderrFile);
 
         int exitCode = process.waitFor();
+        if (exitCode == 0) {
+            writeToOutput("Command executed successfully.\n");
+        } else {
+            writeToOutput("Command execution failed with exit code: " + exitCode + "\n");
+        }
+
         return exitCode;
     }
 
-    public String getStdErr() {
-        return stdErr;
-    }
-
-    public String getStdOut() {
-        return stdOut;
-    }
     public void setWorkingDirectory(File file) {
         this.workingDirectory = file;
     }
+
+    public void setStdoutFile(File file) {
+        this.stdoutFile = file;
+    }
+
+    public void setStderrFile(File file) {
+        this.stderrFile = file;
+    }
+
+
+    private void writeToOutput(String message) throws IOException {
+        if (stdoutFile != null) {
+            try (FileWriter writer = new FileWriter(stdoutFile, true)) {
+                writer.write(message);
+            }
+        }
+    }
+
+    private void appendStreamToFile(InputStream inputStream, File file) throws IOException {
+        if (file != null) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                 FileWriter writer = new FileWriter(file, true)) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    writer.write(line + "\n");
+                }
+            }
+        }
+    }
+
 }

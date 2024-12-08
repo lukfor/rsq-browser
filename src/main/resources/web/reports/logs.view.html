@@ -1,0 +1,25 @@
+{{ title = "Logs" }}
+{{include "../layouts/header.view.html"}}
+
+<div id="page-content">
+
+  <h2>
+    Logs {{report.id}}
+  </h2>
+
+  <h3>StdErr</h3>
+  <pre class="small" id="stderr">{{stderr}}</pre>
+
+  <h3>StdOut</h3>
+  <pre class="small" id="stdout">{{stdout}}</pre>
+
+
+</div>
+
+<script>
+  ansi_up = new AnsiUp();
+  document.getElementById("stderr").innerHTML = ansi_up.ansi_to_html(document.getElementById("stderr").innerHTML);
+  document.getElementById("stdout").innerHTML = ansi_up.ansi_to_html(document.getElementById("stdout").innerHTML);
+</script>
+
+{{include "../layouts/footer.view.html"}}

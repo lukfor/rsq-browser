@@ -1,4 +1,4 @@
-package genepi.r2browser.tasks;
+package genepi.r2browser.util;
 
 import com.esotericsoftware.yamlbeans.YamlWriter;
 import genepi.r2browser.util.CondaEnvManager;
@@ -13,10 +13,11 @@ public class Quarto {
     private String output;
     private Map<String, Object> params;
     private Path workspacePath;
-    private String stdOut = "";
-    private String stdErr = "";
+    private String binary = "";
+
 
     public Quarto(Path qmdFilePath, Map<String, Object> params, String output, Path workspacePath) {
+        binary = new BinaryFinder("quarto").env("QUARTO_HOME").envPath().path("/usr/local/bin").find();
         this.qmdFilePath = qmdFilePath;
         this.params = params;
         this.output = output;
@@ -75,25 +76,22 @@ public class Quarto {
         CondaEnvManager manager = new CondaEnvManager(condaEnvYaml.toString(), "cache", "micromamba");
 
         String command = String.format(
-                "quarto render \"%s\" --output \"%s\" --execute-params \"%s\"",
+                "%s render \"%s\" --output \"%s\" --execute-params \"%s\"",
+                binary,
                 indexQmdFile.toString().replace("\\", "/"),
                 output.replace("\\", "/"),
                 paramsYamlFile.toString().replace("\\", "/")
         );
 
         manager.setWorkingDirectory(workspacePath.toFile());
+        Path stdoutFile = workspacePath.resolve("command.out");
+        manager.setStdoutFile(stdoutFile.toFile());
+        Path stderrFile = workspacePath.resolve("command.err");
+        manager.setStderrFile(stderrFile.toFile());
+
         int exitCode = manager.executeWithEnv(command);
-        stdErr = manager.getStdErr();
-        stdOut = manager.getStdOut();
 
         return exitCode == 0;
     }
 
-    public String getStdErr() {
-        return stdErr;
-    }
-
-    public String getStdOut() {
-        return stdOut;
-    }
 }

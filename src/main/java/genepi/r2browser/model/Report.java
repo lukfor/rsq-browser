@@ -4,21 +4,14 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import genepi.io.FileUtil;
-import genepi.io.table.writer.CsvTableWriter;
-import genepi.r2browser.App;
-import genepi.r2browser.tasks.ExtractVariantsTask;
-import genepi.r2browser.tasks.Quarto;
-import genepi.r2browser.tasks.RMarkdownScript;
+import genepi.r2browser.util.Quarto;
 import genepi.r2browser.util.GenomicRegion;
-import genepi.r2browser.web.WebApp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.lang.reflect.WildcardType;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Report implements Runnable {
 
@@ -39,6 +32,10 @@ public class Report implements Runnable {
 	private long executionTime;
 
 	private String output = null;
+
+	private String stdErr;
+
+	private String stdOut;
 
 	private String error;
 
@@ -182,6 +179,10 @@ public class Report implements Runnable {
 			}
 			params.put("snps_coordinates", snpsCoordinates);
 
+			Path stdoutFile = workspaceDir.resolve("command.out");
+			Path stderrFile = workspaceDir.resolve("command.err");
+			setStdOut(stdoutFile.toString());
+			setStdErr(stderrFile.toString());
 
 			String output = getId() + ".html";
 			Quarto quarto = new Quarto(report, params, output, workspaceDir);
@@ -195,12 +196,11 @@ public class Report implements Runnable {
 				setOutput(FileUtil.path(_workspace, getId(), output));
 			} else {
 				setStatus(QueryStatus.FAILED);
-				setError("Rendering failed.<br><pre>" + quarto.getStdErr() + "</pre>");
+				setError("Rendering report failed.");
 			}
 			Report.save(this, _workspace);
 
 		} catch (Exception e) {
-			e.printStackTrace();
 			setExecutionTime(0);
 			setFinisehdOn(new Date());
 			setStatus(QueryStatus.FAILED);
@@ -241,4 +241,19 @@ public class Report implements Runnable {
 		}
 	}
 
+	public String getStdErr() {
+		return stdErr;
+	}
+
+	public void setStdErr(String stdErr) {
+		this.stdErr = stdErr;
+	}
+
+	public String getStdOut() {
+		return stdOut;
+	}
+
+	public void setStdOut(String stdOut) {
+		this.stdOut = stdOut;
+	}
 }
