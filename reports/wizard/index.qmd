@@ -275,7 +275,7 @@ sketch = htmltools::withTags(table(
           th("mean r2"),
           th(style = "border-right: solid 2px;", "% Variants"),
           th("mean r2"),
-          th(style = "% Variants")
+          th("% Variants")
       )
     )
 ))
