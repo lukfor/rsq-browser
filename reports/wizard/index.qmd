@@ -118,8 +118,8 @@ get_gene_statistics <- function(input_df, gene_name) {
     #gene <- gene_name
     #stats_temp <- as.data.frame(gene)
     stats_temp <- as.data.frame(genotyping_array)
-    #stats_temp$array <- array_name
-    stats_temp$ref_panel <-ref_panel_name
+    stats_temp$genotyping_array <- factor(stats_temp$genotyping_array)
+    stats_temp$ref_panel <- factor(ref_panel_name)
     stats_temp$nr_variants <- nr_var
     stats_temp$prop_hq_variants <- prop_hq_var
     stats_temp$mean_r2_ultra_rare <- ref_data_bins_subset$ultra_rare
@@ -136,6 +136,10 @@ get_gene_statistics <- function(input_df, gene_name) {
     stats <- stats %>%
       filter(genotyping_array == params$chip)
   }
+  
+  ### sort desc 1.) by nr_variants and 2.) by prop_hq_variants
+  stats <- stats %>%
+    arrange(desc(nr_variants), desc(prop_hq_variants))
   
   return(stats)
   
@@ -186,9 +190,9 @@ get_snp_statistics <- function(input_df, snp_name) {
     ### collect information for one specific combi in a dataframe
     rsID <- snp_name
     stats_temp <- as.data.frame(rsID)
-    stats_temp$genotyping_array <- genotyping_array
-    stats_temp$ref_panel <-ref_panel_name
-    stats_temp$included <- included
+    stats_temp$genotyping_array <- factor(genotyping_array)
+    stats_temp$ref_panel <- factor(ref_panel_name)
+    stats_temp$included <- factor(included)
     stats_temp$r2 <- r2
  
     
@@ -201,6 +205,10 @@ get_snp_statistics <- function(input_df, snp_name) {
     stats <- stats %>%
       filter(genotyping_array == params$chip)
   }
+  
+  ### sort descending by r2
+  stats <- stats %>%
+    arrange(desc(r2))
   
   return(stats)
   
@@ -272,7 +280,7 @@ for (i in 1:length(params$genes_coordinates)) {
   html_list <- append(html_list, header)
   
   ## get datatable with appropriate styling
-  styled_table <- list(datatable(gene_stats_temp, options = list(
+  styled_table <- list(datatable(gene_stats_temp, filter = "top", rownames = FALSE, options = list(
     pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
     lengthChange = F, ## remove "Show entries" dropdown
     paging = F ## disable pagination of Table (not required when all rows are shown)
@@ -333,10 +341,10 @@ if (length(params$snps) != 0) {
   
   ## get datatable with appropriate styling
   ## TODO: adjust styling/options!!
-  styled_snp_table <- list(datatable(snp_data,
+  styled_snp_table <- list(datatable(snp_data, filter = "top", rownames = FALSE,
                                      extensions = 'RowGroup', ### use rowgroup extension
-                                     options = list(rowGroup = list(dataSrc = 1), ### group rows by SNP (first column)
-                                                    columnDefs = list(list(visible = F, targets = 1)))) %>% ### hide first column from display
+                                     options = list(rowGroup = list(dataSrc = 0), ### group rows by SNP (first column = 0 if rownames = F, else 1)
+                                                    columnDefs = list(list(visible = F, targets = 0)))) %>% ### hide first column from display
       ### set custom format for selected columns
       formatStyle(c('r2'),
                 backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
