@@ -78,14 +78,21 @@ get_gene_statistics <- function(input_df, gene_name) {
     ## remove rows with missing values (not informative, e.g. SNP not measured by this specific combination)
     na.omit()
   
-  ## get mean r2 for each bin and for each array/ref-panel combination
+  ## get mean r2 and count (n) for each bin and for each array/ref-panel combination
   mean_r2_per_bin <- data_pivoted_binned_temp %>%
     group_by(bin, identifier) %>%
     summarize(mean_r2 = round(mean(r2),3))
   
+  count_per_bin <- data_pivoted_binned_temp %>%
+    group_by(bin, identifier) %>%
+    count()
+  
   ## get into wide format so that the MAF bins are columns (rows are then unique per identifier)
   mean_r2_per_bin <- mean_r2_per_bin %>%
     pivot_wider(names_from = "bin", values_from = "mean_r2")
+  
+  count_per_bin <- count_per_bin %>%
+    pivot_wider(names_from = "bin", values_from = "n")
   
   ## get unique combinations of genotyping array and reference panel
   array_ref_ids <- unique(data_pivoted_temp$identifier)
@@ -107,25 +114,31 @@ get_gene_statistics <- function(input_df, gene_name) {
       filter(identifier == array_ref_ids[i])
     ref_data_bins_subset <- mean_r2_per_bin %>%
       filter(identifier == array_ref_ids[i])
+    ref_data_bins_subset2 <- count_per_bin %>%
+      filter(identifier == array_ref_ids[i])
     
     ## get nr. of variants
     nr_var <- nrow(ref_data_subset)
     
     ## get proportion of high quality (r2 >= 0.8) variants
-    prop_hq_var <- round(nrow(ref_data_subset[ref_data_subset$r2 >= 0.8, ])/nr_var,3)
+    prop_hq_var <- nrow(ref_data_subset[ref_data_subset$r2 >= 0.8, ])/nr_var
     
     ### collect information for one specific combi in a dataframe
     #gene <- gene_name
     #stats_temp <- as.data.frame(gene)
     stats_temp <- as.data.frame(genotyping_array)
-    #stats_temp$array <- array_name
-    stats_temp$ref_panel <-ref_panel_name
+    stats_temp$genotyping_array <- factor(stats_temp$genotyping_array)
+    stats_temp$ref_panel <- factor(ref_panel_name)
     stats_temp$nr_variants <- nr_var
     stats_temp$prop_hq_variants <- prop_hq_var
-    stats_temp$mean_r2_ultra_rare <- ref_data_bins_subset$ultra_rare
-    stats_temp$mean_r2_rare <- ref_data_bins_subset$rare
-    stats_temp$mean_r2_low_freq <- ref_data_bins_subset$low_frequency
-    stats_temp$mean_r2_common <- ref_data_bins_subset$common
+    stats_temp$ultra_rare.mean_r2 <- ref_data_bins_subset$ultra_rare
+    stats_temp$ultra_rare.perc_n <- ref_data_bins_subset2$ultra_rare/nr_var
+    stats_temp$rare.mean_r2 <- ref_data_bins_subset$rare
+    stats_temp$rare.perc_n <- ref_data_bins_subset2$rare/nr_var
+    stats_temp$low_freq.mean_r2 <- ref_data_bins_subset$low_frequency
+    stats_temp$low_freq.perc_n <- ref_data_bins_subset2$low_frequency/nr_var
+    stats_temp$common.mean_r2 <- ref_data_bins_subset$common
+    stats_temp$common.perc_n <- ref_data_bins_subset2$common/nr_var
     
     ## Collect data in one dataframe
     stats <- rbind(stats, stats_temp)
@@ -136,6 +149,10 @@ get_gene_statistics <- function(input_df, gene_name) {
     stats <- stats %>%
       filter(genotyping_array == params$chip)
   }
+  
+  ### sort desc 1.) by nr_variants and 2.) by prop_hq_variants
+  stats <- stats %>%
+    arrange(desc(nr_variants), desc(prop_hq_variants))
   
   return(stats)
   
@@ -186,9 +203,9 @@ get_snp_statistics <- function(input_df, snp_name) {
     ### collect information for one specific combi in a dataframe
     rsID <- snp_name
     stats_temp <- as.data.frame(rsID)
-    stats_temp$genotyping_array <- genotyping_array
-    stats_temp$ref_panel <-ref_panel_name
-    stats_temp$included <- included
+    stats_temp$genotyping_array <- factor(genotyping_array)
+    stats_temp$ref_panel <- factor(ref_panel_name)
+    stats_temp$included <- factor(included)
     stats_temp$r2 <- r2
  
     
@@ -201,6 +218,10 @@ get_snp_statistics <- function(input_df, snp_name) {
     stats <- stats %>%
       filter(genotyping_array == params$chip)
   }
+  
+  ### sort descending by r2
+  stats <- stats %>%
+    arrange(desc(r2))
   
   return(stats)
   
@@ -227,8 +248,37 @@ col_names <- strsplit(header, "\t")[[1]]
 # instantiate empty dataframe where statistics will be collected per gene per array and per reference panel
 #gene_stats_all <- data.frame()
 
-# Create a list, where everything is collected, which should be displayed in the html report
+## Create a list, where everything is collected, which should be displayed in the html report
 html_list <- list()
+
+
+## create a custom table container
+sketch = htmltools::withTags(table(
+  class = 'display',
+  thead(
+    tr(
+      th(rowspan = 2, 'Genotyping Array'),
+      th(rowspan = 2, 'Reference Panel'),
+      th(rowspan = 2, 'n Variants'),
+      th(rowspan = 2, style = "border-right: solid 2px;", "% Variants r2 \u2265 0.8"), ### NOTE: \u2265 = Unicode character for greater-than-or-equal-to
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Ultra-rare (MAF<0.5%)'),
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Rare (MAF 0.5-1%)'),
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Low-frequency (MAF 1-5%)'),
+      th(colspan = 2, style = "text-align:center;", 'Common (MAF>5%)')
+      ),
+        tr(
+          #lapply(rep(c('mean r2', '% Variants'), 4), th)
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "% Variants"),
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "% Variants"),
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "% Variants"),
+          th("mean r2"),
+          th("% Variants")
+      )
+    )
+))
 
 
 ### iterate over all genes with genes_coordinates parameter
@@ -270,17 +320,30 @@ for (i in 1:length(params$genes_coordinates)) {
   header <- list(tags$h2(gene))
   ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
   html_list <- append(html_list, header)
-  
+
   ## get datatable with appropriate styling
-  styled_table <- list(datatable(gene_stats_temp, options = list(
-    pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
-    lengthChange = F, ## remove "Show entries" dropdown
-    paging = F ## disable pagination of Table (not required when all rows are shown)
-  )) %>%
-    ### set custom format for selected columns
-    formatStyle(c('mean_r2_ultra_rare', 'mean_r2_rare', 'mean_r2_low_freq', 'mean_r2_common'),
-              backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
-              color = c("white")))
+  styled_table <- list(datatable(gene_stats_temp, filter = "top", rownames = FALSE, 
+                                 # colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames -> not required with sketch!
+                                 #              "Reference Panel" = "ref_panel",
+                                 #              "n Variants" = "nr_variants",
+                                 #              "% Varaints r2 >= 0.8" = "prop_hq_variants"), 
+                                 container = sketch,
+                                 escape = F,
+                                 options = list(
+                                  pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
+                                  lengthChange = F, ## remove "Show entries" dropdown
+                                  paging = F ## disable pagination of Table (not required when all rows are shown)
+                                  #columnDefs = list(list(className = 'dt-center', targets = 0:length(gene_stats_temp)))
+                                  )) %>%
+                                  ### display selected columns with '%' sign - CAVE: expects proportion as input
+                                  formatPercentage(c("prop_hq_variants", "ultra_rare.perc_n", "rare.perc_n", "low_freq.perc_n", "common.perc_n"),
+                                                   digits = 2) %>%
+                                  ### set custom format for selected columns
+                                  formatStyle(columns = c('ultra_rare.mean_r2', 'rare.mean_r2', 'low_freq.mean_r2', 'common.mean_r2'),
+                                            backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
+                                            color = c("white")) %>%
+                                  formatStyle(columns = c(4, 6, 8, 10), `border-right` = "solid 4px"))
+    
   
   html_list <- append(html_list, styled_table)
 
@@ -333,14 +396,17 @@ if (length(params$snps) != 0) {
   
   ## get datatable with appropriate styling
   ## TODO: adjust styling/options!!
-  styled_snp_table <- list(datatable(snp_data,
+  styled_snp_table <- list(datatable(snp_data, filter = "top", rownames = FALSE,
+                                     colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames
+                                                  "Reference Panel" = "ref_panel",
+                                                  "Included" = "included"), 
                                      extensions = 'RowGroup', ### use rowgroup extension
-                                     options = list(rowGroup = list(dataSrc = 1), ### group rows by SNP (first column)
-                                                    columnDefs = list(list(visible = F, targets = 1)))) %>% ### hide first column from display
-      ### set custom format for selected columns
-      formatStyle(c('r2'),
-                backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
-                color = c("white")))
+                                     options = list(rowGroup = list(dataSrc = 0), ### group rows by SNP (first column = 0 if rownames = F, else 1)
+                                                    columnDefs = list(list(visible = F, targets = 0)))) %>% ### hide first column from display
+                                      ### set custom format for selected columns
+                                      formatStyle(c('r2'),
+                                                backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
+                                                color = c("white")))
   
   html_list <- append(html_list, styled_snp_table)
   
