@@ -1,12 +1,17 @@
 package genepi.r2browser.util;
 
+import genepi.r2browser.App;
+import genepi.r2browser.config.Configuration;
+
 import java.io.*;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 public class CondaEnvManager {
 
+    private boolean condaEnabled = false;
     private final String condaEnvYaml;
     private final String cacheDirectory;
     private final String tool;
@@ -15,20 +20,31 @@ public class CondaEnvManager {
     private File stdoutFile;
     private File stderrFile;
 
-    public CondaEnvManager(String condaEnvYaml, String cacheDirectory, String tool) {
+    public CondaEnvManager(String condaEnvYaml, Map<String, Object> options) {
+
         this.condaEnvYaml = condaEnvYaml;
-        this.cacheDirectory = cacheDirectory;
-        this.tool = tool;
-        if (tool.equalsIgnoreCase("micromamba")) {
-            binary = new BinaryFinder("micromamba").env("MICROMAMBA_HOME").envPath().path("/usr/local/bin").find();
-        } else if (tool.equalsIgnoreCase("mamba")) {
+        this.cacheDirectory = (String) options.get("cacheDir");
+        this.condaEnabled = Boolean.parseBoolean(options.get("enabled").toString());
+        Boolean useMamba = Boolean.parseBoolean(options.get("useMamba").toString());
+        Boolean useMicromamba = Boolean.parseBoolean(options.get("useMicromamba").toString());
+        if (useMamba) {
+            tool = "mamba";
             binary = new BinaryFinder("mamba").env("MAMBA_HOME").envPath().path("/usr/local/bin").find();
-        } else if (tool.equalsIgnoreCase("conda")) {
+        } else if (useMicromamba) {
+            tool = "micromamba";
+            binary = new BinaryFinder("micromamba").env("MICROMAMBA_HOME").envPath().path("/usr/local/bin").find();
+        } else {
+            tool = "conda";
             binary = new BinaryFinder("conda").env("CONDA_HOME").envPath().path("/usr/local/bin").find();
         }
     }
 
     public int executeWithEnv(String command) throws Exception {
+
+        if (!condaEnabled) {
+            writeToOutput("Conda not activated.\n");
+            return execute(command);
+        }
 
         if (binary == null) {
             throw new RuntimeException("Binary for tool " + tool + " not found.");
@@ -37,6 +53,7 @@ public class CondaEnvManager {
         String hash = generateHash(new File(condaEnvYaml));
         String envFolder = new File(cacheDirectory + File.separator + "env-" + hash).getAbsolutePath();
 
+        writeToOutput("Conda activated.\n");
         writeToOutput("Use " + tool  + " installed in " + binary + "\n");
 
         File envDir = new File(envFolder);
@@ -93,6 +110,28 @@ public class CondaEnvManager {
         writeToOutput("Executing command: " + activateCommand + "\n");
 
         ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", activateCommand);
+        if (workingDirectory != null) {
+            processBuilder.directory(workingDirectory);
+        }
+
+        Process process = processBuilder.start();
+        appendStreamToFile(process.getInputStream(), stdoutFile);
+        appendStreamToFile(process.getErrorStream(), stderrFile);
+
+        int exitCode = process.waitFor();
+        if (exitCode == 0) {
+            writeToOutput("Command executed successfully.\n");
+        } else {
+            writeToOutput("Command execution failed with exit code: " + exitCode + "\n");
+        }
+
+        return exitCode;
+    }
+
+    private int execute(String command) throws IOException, InterruptedException {
+        writeToOutput("Executing command: " + command + "\n");
+
+        ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
         if (workingDirectory != null) {
             processBuilder.directory(workingDirectory);
         }

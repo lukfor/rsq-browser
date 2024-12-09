@@ -1,6 +1,7 @@
 package genepi.r2browser.util;
 
 import com.esotericsoftware.yamlbeans.YamlWriter;
+import genepi.r2browser.App;
 import genepi.r2browser.util.CondaEnvManager;
 
 import java.io.*;
@@ -73,7 +74,9 @@ public class Quarto {
         if (!Files.exists(condaEnvYaml)) {
             throw new FileNotFoundException("env not found in the copied folder: " + condaEnvYaml);
         }
-        CondaEnvManager manager = new CondaEnvManager(condaEnvYaml.toString(), "cache", "micromamba");
+
+        Map<String, Object> options = App.getDefault().getConfiguration().getConda();
+        CondaEnvManager manager = new CondaEnvManager(condaEnvYaml.toString(), options);
 
         String command = String.format(
                 "%s render \"%s\" --output \"%s\" --execute-params \"%s\"",
