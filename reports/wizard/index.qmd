@@ -239,9 +239,7 @@ html_list <- list()
 
 
 ### load appropriate reference file for the selected population (user must select population)
-if (params$population == "eur") {
-  overview_fig_data <- fread("data/EUR_plot_data.csv") ## TODO: check if relative paths work in the actual application
-}
+overview_fig_data <- fread(paste(params$population_file, ".csv", sep = "")) ## TODO: check if relative paths work in the actual application
 
 
 ### if user selected one or more arrays (chip parameter) -> filter for these arrays
