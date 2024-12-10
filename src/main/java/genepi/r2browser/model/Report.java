@@ -179,6 +179,15 @@ public class Report implements Runnable {
 			}
 			params.put("snps_coordinates", snpsCoordinates);
 
+			if (params.containsKey("pgs")) {
+				Object pgs = params.get("pgs");
+				if (pgs instanceof  String) {
+					List<String> list = new ArrayList<>();
+					list.add(pgs.toString());
+					params.put("pgs", list);
+				}
+			}
+
 			Path stdoutFile = workspaceDir.resolve("command.out");
 			Path stderrFile = workspaceDir.resolve("command.err");
 			setStdOut(stdoutFile.toString());
