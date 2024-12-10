@@ -1,0 +1,68 @@
+---
+title: "generate_PGS_stats"
+author: "Florian Schnitzer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r analyze, include=FALSE}
+
+pgs_breast_cancer <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/PGS000004_hmPOS_GRCh38.txt.gz")
+
+### define file
+tabix_file <- "//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz"
+
+## Create a TabixFile object
+tbx <- TabixFile(tabix_file)
+
+## Read the first line of the file = column names (NOTE: much faster than fread() in this case!)
+header <- readLines(gzfile(tabix_file), n = 1)
+
+## Extract column names from first line
+col_names <- strsplit(header, "\t")[[1]]
+
+
+
+
+
+
+for (i in 1:nrow(pgs_breast_cancer)) {
+  #print(pgs_breast_cancer[i, chr_name])
+}
+
+
+## Define genomnic regions of interest
+region_temp <- GRanges(seqnames = "chr1", ranges = IRanges(start = 100880328, end = 100880328))
+
+## Extract data from the specified regions
+result_temp <- scanTabix(tbx, param = region_temp)
+
+## Parse the extracted lines into a data frame
+lines <- unlist(result_temp)
+data_temp <- fread(text = lines, header = F, sep = "\t")
+colnames(data_temp) <- col_names
+
+## create MAF column
+data_temp$MAF <- ifelse(data_temp$AF <= 0.5, data_temp$AF, 1-data_temp$AF)
+
+## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
+data_temp <- data_temp %>%
+  mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
+                  labels = c("ultra_rare", "rare", "low_frequency", "common")))
+
+
+
+
+```
+
+
+```{r plot, echo=FALSE}
+
+```
+
+
