@@ -32,3 +32,14 @@ hs_err_pid*
 .settings/
 /uploads/
 /queries
+/bin/
+
+# local data for report development and testing
+/local_files/
+/.idea/
+/reports/wizard/index.html
+/reports/wizard/testing_files/
+/reports/wizard/testing*
+/reports/wizard/colnames.txt
+/data/
+/cache/

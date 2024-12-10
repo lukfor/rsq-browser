@@ -1,0 +1,16 @@
+{{ title = "Results" }}
+{{include "../layouts/header.view.html"}}
+
+<div id="page-content" class="text-center">
+
+  <h2 class="text-danger">
+    Report failed
+  </h2>
+
+  <p class="text-danger mt-3">
+    {{escape(report.error)}}
+  </p>
+
+</div>
+
+{{include "../layouts/footer.view.html"}}

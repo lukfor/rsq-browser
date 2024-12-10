@@ -57,8 +57,14 @@ public class Configuration {
 
 	private List<AdditionalDownload> files = new Vector<AdditionalDownload>();
 
-	public Configuration() {
+	private Map<String, Object> conda = null;
 
+	public Configuration() {
+		conda = new HashMap<>();
+		conda.put("enabled", false);
+		conda.put("useMamba", false);
+		conda.put("useMicromamba", false);
+		conda.put("cacheDir", "cache");
 	}
 
 	public Map<String, GenomicRegion> getGenesIndex() {
@@ -261,6 +267,14 @@ public class Configuration {
 			index++;
 		}
 
+	}
+
+	public void setConda(Map<String, Object> conda) {
+		this.conda.putAll(conda);
+	}
+
+	public Map<String, Object> getConda() {
+		return conda;
 	}
 
 	public static Configuration loadFromFile(File file, String parent) throws IOException {

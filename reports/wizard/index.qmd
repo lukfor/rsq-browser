@@ -1,0 +1,471 @@
+---
+format:
+  html:
+    pagetitle: "Rsq Browser"
+    body-classes: "bg-light"
+    page-layout: custom
+    embed-resources: true
+    toc: false
+    title-block-style	: none
+    title-block-banner: false
+    date-format: "D MMMM YYYY"
+    include-before-body: "template/navbar.view.html"
+    include-after-body: "template/footer.view.html"
+    include-in-header:
+      - file: template/header.html
+params:
+  snps:
+  - rs10455872
+  - rs1122608
+  snps_coordinates: 
+  - chr6:160589086-160589086
+  - chr19:11052925-11052925
+  rare_variant_analysis: yes
+  genotyped: no
+  chip: IO
+  genes:
+  - BRCA1
+  - TP53
+  genes_coordinates: 
+  - chr17:43044295-43170245
+  - chr17:7661779-7687538
+  pgs:
+  - PGS000004
+  upload_permission: no
+  population: eur
+  population_file: //wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+### load libraries
+library(Rsamtools)
+library(data.table)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(DT)
+library(htmltools)
+
+
+```
+
+
+
+
+```{r load_data, echo = FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+######## FUNCTIONS #########
+
+### define function to get gene-level statistics for each combination of genotyping array and reference panel
+get_gene_statistics <- function(input_df, gene_name) {
+  
+  ## prepare data for statistics where bins do NOT matter
+  data_pivoted_temp <- input_df %>%
+    ## remove superfluous columns
+    select(-CHR, -POS, -REF, -ALT, -AF, -MAF, -bin, -ends_with("_in")) %>%
+    ## tidy up, get better format for reporting
+    pivot_longer(cols = everything(), names_to = "identifier", values_to = "r2") %>%
+    ## remove rows with missing values (not informative, e.g. SNP not measured by this specific combination)
+    na.omit()
+  
+  ## prepare data for statistics where bins DO matter
+  data_pivoted_binned_temp <- input_df %>%
+    ## remove superfluous columns
+    select(-CHR, -POS, -REF, -ALT, -AF, -MAF, -ends_with("_in")) %>%
+    ## tidy up, get better format for reporting
+    pivot_longer(cols = !bin, names_to = "identifier", values_to = "r2") %>%
+    ## remove rows with missing values (not informative, e.g. SNP not measured by this specific combination)
+    na.omit()
+  
+  ## get mean r2 and count (n) for each bin and for each array/ref-panel combination
+  mean_r2_per_bin <- data_pivoted_binned_temp %>%
+    group_by(bin, identifier) %>%
+    summarize(mean_r2 = round(mean(r2),3))
+  
+  count_per_bin <- data_pivoted_binned_temp %>%
+    group_by(bin, identifier) %>%
+    count()
+  
+  ## get into wide format so that the MAF bins are columns (rows are then unique per identifier)
+  mean_r2_per_bin <- mean_r2_per_bin %>%
+    pivot_wider(names_from = "bin", values_from = "mean_r2")
+  
+  count_per_bin <- count_per_bin %>%
+    pivot_wider(names_from = "bin", values_from = "n")
+  
+  ## get unique combinations of genotyping array and reference panel
+  array_ref_ids <- unique(data_pivoted_temp$identifier)
+  
+  ## instantiate empty dataframe where results will be collected
+  stats <- data.frame()
+  
+  ## iterate over all unique combinations of genotyping array and reference panel
+  for (i in 1:length(array_ref_ids)) {
+    
+    ## get array name from identifier
+    genotyping_array <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][1]
+    
+    ## get reference panel name from identifier 
+    ref_panel_name <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][2]
+    
+    ## get only data concerning a specific combination of genotyping array and reference panel
+    ref_data_subset <- data_pivoted_temp %>%
+      filter(identifier == array_ref_ids[i])
+    ref_data_bins_subset <- mean_r2_per_bin %>%
+      filter(identifier == array_ref_ids[i])
+    ref_data_bins_subset2 <- count_per_bin %>%
+      filter(identifier == array_ref_ids[i])
+    
+    ## get nr. of variants
+    nr_var <- nrow(ref_data_subset)
+    
+    ## get proportion of high quality (r2 >= 0.8) variants
+    prop_hq_var <- nrow(ref_data_subset[ref_data_subset$r2 >= 0.8, ])/nr_var
+    
+    ### collect information for one specific combi in a dataframe
+    #gene <- gene_name
+    #stats_temp <- as.data.frame(gene)
+    stats_temp <- as.data.frame(genotyping_array)
+    stats_temp$genotyping_array <- factor(stats_temp$genotyping_array)
+    stats_temp$ref_panel <- factor(ref_panel_name)
+    stats_temp$nr_variants <- nr_var
+    stats_temp$prop_hq_variants <- prop_hq_var
+    stats_temp$ultra_rare.mean_r2 <- ref_data_bins_subset$ultra_rare
+    stats_temp$ultra_rare.perc_n <- ref_data_bins_subset2$ultra_rare/nr_var
+    stats_temp$rare.mean_r2 <- ref_data_bins_subset$rare
+    stats_temp$rare.perc_n <- ref_data_bins_subset2$rare/nr_var
+    stats_temp$low_freq.mean_r2 <- ref_data_bins_subset$low_frequency
+    stats_temp$low_freq.perc_n <- ref_data_bins_subset2$low_frequency/nr_var
+    stats_temp$common.mean_r2 <- ref_data_bins_subset$common
+    stats_temp$common.perc_n <- ref_data_bins_subset2$common/nr_var
+    
+    ## Collect data in one dataframe
+    stats <- rbind(stats, stats_temp)
+  }
+  
+  ### if user selected one or more arrays (chip parameter) -> filter for these arrays
+  if (params$genotyped == TRUE) {
+    stats <- stats %>%
+      filter(genotyping_array == params$chip)
+  }
+  
+  ### sort desc 1.) by nr_variants and 2.) by prop_hq_variants
+  stats <- stats %>%
+    arrange(desc(nr_variants), desc(prop_hq_variants))
+  
+  return(stats)
+  
+}
+
+
+get_snp_statistics <- function(input_df, snp_name) {
+  
+  ## prepare data for statistics where bins do NOT matter
+  data_pivoted_temp <- input_df %>%
+    ## remove superfluous columns
+    select(-CHR, -POS, -REF, -ALT, -AF, -ends_with("_in")) %>%
+    ## tidy up, get better format for reporting
+    pivot_longer(cols = everything(), names_to = "identifier", values_to = "r2") %>%
+    ## remove empty rows (SNP not measured)
+    na.omit()
+  
+  ## get unique combinations of genotyping array and reference panel
+  array_ref_ids <- unique(data_pivoted_temp$identifier)
+  
+  ## instantiate empty dataframe where results will be collected
+  stats <- data.frame()
+  
+  ## iterate over all unique combinations of genotyping array and reference panel
+  for (i in 1:length(array_ref_ids)) {
+    
+    ## get array name from identifier
+    genotyping_array <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][1]
+    
+    ## get reference panel name from identifier 
+    ref_panel_name <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][2]
+    
+    ## get only data concerning a specific combination of genotyping array and reference panel
+    ref_data_subset <- data_pivoted_temp %>%
+      filter(identifier == array_ref_ids[i])
+    
+    ## check if variant is captured for each combination
+    ## due to na.omit() before we will have an empty df if the SNP is not measured, otherwise it was measured
+    if (nrow(ref_data_subset) == 0) {
+      included <- "no" ## if df is empty -> SNP not present
+      r2 <- NA
+    } else {
+      included <- "yes" ## if df is not empty -> SNP is present
+      r2 <- ref_data_subset$r2
+    }
+    
+    
+    ### collect information for one specific combi in a dataframe
+    rsID <- snp_name
+    stats_temp <- as.data.frame(rsID)
+    stats_temp$genotyping_array <- factor(genotyping_array)
+    stats_temp$ref_panel <- factor(ref_panel_name)
+    stats_temp$included <- factor(included)
+    stats_temp$r2 <- r2
+ 
+    
+    ## Collect data in one dataframe
+    stats <- rbind(stats, stats_temp)
+  }
+  
+  ### if user selected one or more arrays (chip parameter) -> filter for these arrays
+  if (params$genotyped == TRUE) {
+    stats <- stats %>%
+      filter(genotyping_array == params$chip)
+  }
+  
+  ### sort descending by r2
+  stats <- stats %>%
+    arrange(desc(r2))
+  
+  return(stats)
+  
+}
+
+
+
+
+###### MAIN ########
+
+## Create a list, where everything is collected, which should be displayed in the html report
+html_list <- list()
+
+
+### load appropriate reference file for the selected population (user must select population)
+overview_fig_data <- fread(paste(params$population_file, ".csv", sep = "")) ## TODO: check if relative paths work in the actual application
+
+
+### if user selected one or more arrays (chip parameter) -> filter for these arrays
+if (params$genotyped == TRUE) {
+  overview_fig_data <- overview_fig_data %>%
+    ## get array and ref_panel from identifier
+    separate_wider_delim(cols = identifier, delim = "_", names = c("array", "ref_panel"), cols_remove = FALSE) %>%
+    filter(array == params$chip)
+}
+
+overview_figure_header <- list(tags$h2("Genome-wide Imputation Quality"))
+  
+## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
+html_list <- append(html_list, overview_figure_header)
+
+### create overview plot - TODO: improve legend conent!
+lineplot <- ggplot(overview_fig_data, aes(x=bin_detailed, y=mean_r2, color = identifier)) +
+  ### draw line plot
+  geom_line()+
+  ### highlight actual data points
+  geom_point(shape=0)+
+  ## use log-scale on x-axis and display x-axis labels without trailing zeros
+  scale_x_log10(labels = function(x) as.character(x))+
+  ## manually set y-axis ticks and set limits of the y-axis (include whole range from 0 to 1)
+  scale_y_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), limits = c(0,1))+
+  xlab("Minor Allele Frequency (MAF)")+
+  ylab("Average Imputation Quality")+
+  theme_minimal()
+
+### convert to plotly object
+lineplot_plotly <- ggplotly(lineplot)
+
+## add to html list
+html_list <- append(html_list, list(lineplot_plotly))
+
+
+### define appropriate file
+tabix_file <- params$population_file
+#tabix_file <- "//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz"
+
+## Create a TabixFile object
+tbx <- TabixFile(tabix_file)
+
+## Read the first line of the file = column names (NOTE: much faster than fread() in this case!)
+header <- readLines(gzfile(tabix_file), n = 1)
+
+## Extract column names from first line
+col_names <- strsplit(header, "\t")[[1]]
+
+## instantiate empty dataframe where statistics will be collected per gene per array and per reference panel
+#gene_stats_all <- data.frame()
+
+
+
+## create a custom table container (e.g. for gene Table)
+sketch = htmltools::withTags(table(
+  class = 'display',
+  thead(
+    tr(
+      th(rowspan = 2, 'Genotyping Array'),
+      th(rowspan = 2, 'Reference Panel'),
+      th(rowspan = 2, 'n Variants'),
+      th(rowspan = 2, style = "border-right: solid 2px;", "% Variants r2 \u2265 0.8"), ### NOTE: \u2265 = Unicode character for greater-than-or-equal-to
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Ultra-rare (MAF<0.5%)'),
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Rare (MAF 0.5-1%)'),
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Low-frequency (MAF 1-5%)'),
+      th(colspan = 2, style = "text-align:center;", 'Common (MAF>5%)')
+      ),
+        tr(
+          #lapply(rep(c('mean r2', '% Variants'), 4), th)
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "% Variants"),
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "% Variants"),
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "% Variants"),
+          th("mean r2"),
+          th("% Variants")
+      )
+    )
+))
+
+
+### iterate over all genes with genes_coordinates parameter
+for (i in 1:length(params$genes_coordinates)) {
+  
+  ## get gene name
+  gene <- params$genes[i]
+  
+  ## get gene coordinates as CHR/START/STOP from gene_coordinates input parameter
+  chr_temp <- strsplit(params$genes_coordinates[i], split=":", fixed = T)[[1]][1]
+  coord_temp <- strsplit(params$genes_coordinates[i], split=":", fixed = T)[[1]][2]
+  start_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][1])
+  stop_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][2])
+  
+  ## Define genomnic regions of interest
+  region_temp <- GRanges(seqnames = chr_temp, ranges = IRanges(start = start_pos_temp, end = stop_pos_temp))
+  
+  ## Extract data from the specified regions
+  result_temp <- scanTabix(tbx, param = region_temp)
+  
+  ## Parse the extracted lines into a data frame
+  lines <- unlist(result_temp)
+  data_temp <- fread(text = lines, header = F, sep = "\t")
+  colnames(data_temp) <- col_names
+  
+  ## create MAF column
+  data_temp$MAF <- ifelse(data_temp$AF <= 0.5, data_temp$AF, 1-data_temp$AF)
+  
+  ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
+  data_temp <- data_temp %>%
+    mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
+                    labels = c("ultra_rare", "rare", "low_frequency", "common")))
+  
+  
+  ## for each gene (e.g. each set of gene coordinates) get useful statistics
+  gene_stats_temp <- get_gene_statistics(data_temp, gene)
+  
+  ## get Table header in the markdown format of h2 and set content to gene name
+  header <- list(tags$h2(gene))
+  ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
+  html_list <- append(html_list, header)
+
+  ## get datatable with appropriate styling
+  styled_table <- list(datatable(gene_stats_temp, filter = "top", rownames = FALSE, 
+                                 # colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames -> not required with sketch!
+                                 #              "Reference Panel" = "ref_panel",
+                                 #              "n Variants" = "nr_variants",
+                                 #              "% Varaints r2 >= 0.8" = "prop_hq_variants"), 
+                                 container = sketch,
+                                 escape = F,
+                                 options = list(
+                                  pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
+                                  lengthChange = F, ## remove "Show entries" dropdown
+                                  paging = F ## disable pagination of Table (not required when all rows are shown)
+                                  #columnDefs = list(list(className = 'dt-center', targets = 0:length(gene_stats_temp)))
+                                  )) %>%
+                                  ### display selected columns with '%' sign - CAVE: expects proportion as input
+                                  formatPercentage(c("prop_hq_variants", "ultra_rare.perc_n", "rare.perc_n", "low_freq.perc_n", "common.perc_n"),
+                                                   digits = 2) %>%
+                                  ### set custom format for selected columns
+                                  formatStyle(columns = c('ultra_rare.mean_r2', 'rare.mean_r2', 'low_freq.mean_r2', 'common.mean_r2'),
+                                            backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
+                                            color = c("white")) %>%
+                                  formatStyle(columns = c(4, 6, 8, 10), `border-right` = "solid 4px"))
+    
+  
+  html_list <- append(html_list, styled_table)
+
+}
+
+
+## generate SNP table and corresponding header ONLY if the user requested at least one SNP
+## if no SNPs are chosen by user we get an empty list for the snp parameter
+if (length(params$snps) != 0) {
+  
+  snp_table_header <- list(tags$h2("Custom SNPs"))
+  
+  ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
+  html_list <- append(html_list, snp_table_header)
+  
+  ### for SNPS one common table (in contrast to genes) -> collect data in df outside the snps_coordinates for loop
+  snp_data <- data.frame()
+  
+  
+  ### iterate over all custom SNPs desired by the user with snps_coordinates parameter
+  for (i in 1:length(params$snps_coordinates)) {
+    
+    ## get the corresponding snp name
+    snp <- params$snps[i]
+    
+    ## get coordinates as CHR/START/STOP from snps_coordinates input parameter
+    chr_temp <- strsplit(params$snps_coordinates[i], split=":", fixed = T)[[1]][1]
+    coord_temp <- strsplit(params$snps_coordinates[i], split=":", fixed = T)[[1]][2]
+    start_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][1])
+    stop_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][2])
+    
+    ## Define genomnic regions of interest
+    region_temp <- GRanges(seqnames = chr_temp, ranges = IRanges(start = start_pos_temp, end = stop_pos_temp))
+    
+    ## Extract data from the specified regions
+    result_temp <- scanTabix(tbx, param = region_temp)
+    
+    ## Parse the extracted lines into a data frame
+    lines <- unlist(result_temp)
+    data_temp <- fread(text = lines, header = F, sep = "\t")
+    colnames(data_temp) <- col_names
+    
+    ## for each snp (e.g. each set of snp coordinates) get useful statistics
+    snp_stats_temp <- get_snp_statistics(data_temp, snp)
+    
+    ## collect SNP statistics in one dataframe using rbind()
+    snp_data <- rbind(snp_data, snp_stats_temp)
+  
+  }
+  
+  ## get datatable with appropriate styling
+  ## TODO: adjust styling/options!!
+  styled_snp_table <- list(datatable(snp_data, filter = "top", rownames = FALSE,
+                                     colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames
+                                                  "Reference Panel" = "ref_panel",
+                                                  "Included" = "included"), 
+                                     extensions = 'RowGroup', ### use rowgroup extension
+                                     options = list(rowGroup = list(dataSrc = 0), ### group rows by SNP (first column = 0 if rownames = F, else 1)
+                                                    columnDefs = list(list(visible = F, targets = 0)))) %>% ### hide first column from display
+                                      ### set custom format for selected columns
+                                      formatStyle(c('r2'),
+                                                backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
+                                                color = c("white")))
+  
+  html_list <- append(html_list, styled_snp_table)
+  
+}
+
+
+### remove temporary objects, which are no longer required (lines + objects whose names end with "temp")
+rm(list = grep("temp$", ls(), value=T))
+rm(lines)
+
+### render everything with tagList - CAVE: only works correctly when called OUTSIDE for loop (top level)
+tagList(html_list)
+
+
+```
+
+
+
+
+

@@ -11,10 +11,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import genepi.r2browser.model.Query;
+import genepi.r2browser.model.Report;
 
 public class JobQueue implements Runnable {
 
-	private List<Query> queue = new Vector<Query>();
+	private List<Runnable> queue = new Vector<Runnable>();
 
 	private ThreadPoolExecutor scheduler;
 
@@ -30,11 +31,24 @@ public class JobQueue implements Runnable {
 
 			Future l = scheduler.submit(job);
 			queue.add(job);
-			log.info("Submit task " + job.getId() + "...");
+			log.info("Submit query " + job.getId() + "...");
 
 		}
 
 	}
+
+	public void submit(Report job) {
+
+		synchronized (queue) {
+
+			Future l = scheduler.submit(job);
+			queue.add(job);
+			log.info("Submit report " + job.getId() + "...");
+
+		}
+
+	}
+
 
 	@Override
 	public void run() {

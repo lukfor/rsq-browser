@@ -1,0 +1,7 @@
+site_name: RSQ Browser 2
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Report: report.md
+  - Examples: examples.md
+  - About: about.md
