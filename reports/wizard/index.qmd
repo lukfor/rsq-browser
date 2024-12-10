@@ -163,12 +163,12 @@ get_gene_statistics <- function(input_df, gene_name) {
 
 get_snp_statistics <- function(input_df, snp_name) {
   
-  ## prepare data for statistics where bins do NOT matter
+  ## prepare data for statistics
   data_pivoted_temp <- input_df %>%
     ## remove superfluous columns
     select(-CHR, -POS, -REF, -ALT, -AF, -ends_with("_in")) %>%
     ## tidy up, get better format for reporting
-    pivot_longer(cols = everything(), names_to = "identifier", values_to = "r2") %>%
+    pivot_longer(cols = !MAF, names_to = "identifier", values_to = "r2") %>%
     ## remove empty rows (SNP not measured)
     na.omit()
   
@@ -196,9 +196,11 @@ get_snp_statistics <- function(input_df, snp_name) {
     if (nrow(ref_data_subset) == 0) {
       included <- "no" ## if df is empty -> SNP not present
       r2 <- NA
+      MAF <- NA
     } else {
       included <- "yes" ## if df is not empty -> SNP is present
       r2 <- ref_data_subset$r2
+      MAF <- round(ref_data_subset$MAF, 4)
     }
     
     
@@ -209,6 +211,7 @@ get_snp_statistics <- function(input_df, snp_name) {
     stats_temp$ref_panel <- factor(ref_panel_name)
     stats_temp$included <- factor(included)
     stats_temp$r2 <- r2
+    stats_temp$MAF <- MAF
  
     
     ## Collect data in one dataframe
@@ -239,7 +242,7 @@ html_list <- list()
 
 
 ### load appropriate reference file for the selected population (user must select population)
-overview_fig_data <- fread(paste(params$population_file, ".csv", sep = "")) ## TODO: check if relative paths work in the actual application
+overview_fig_data <- fread(paste(params$population_file, ".csv", sep = ""))
 
 
 ### if user selected one or more arrays (chip parameter) -> filter for these arrays
@@ -427,6 +430,9 @@ if (length(params$snps) != 0) {
     lines <- unlist(result_temp)
     data_temp <- fread(text = lines, header = F, sep = "\t")
     colnames(data_temp) <- col_names
+    
+    ## create MAF column
+    data_temp$MAF <- ifelse(data_temp$AF <= 0.5, data_temp$AF, 1-data_temp$AF)
     
     ## for each snp (e.g. each set of snp coordinates) get useful statistics
     snp_stats_temp <- get_snp_statistics(data_temp, snp)
