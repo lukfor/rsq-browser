@@ -44,14 +44,14 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(plotly)
-library(DT) ### TODO: add to conda environment!
-library(htmltools) ### TODO: check if it is in the conda environment!
+library(DT)
+library(htmltools)
 
 
 ```
 
 
-## Imputation Quality for genes by genotyping array and reference panel
+
 
 ```{r load_data, echo = FALSE, warning=FALSE, message=FALSE, results='asis'}
 
@@ -232,27 +232,69 @@ get_snp_statistics <- function(input_df, snp_name) {
 
 ###### MAIN ########
 
-tabix_file <- params$population_file
-#tabix_file <- "//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz"
-
-
-# Create a TabixFile object
-tbx <- TabixFile(tabix_file)
-
-# Read the first line of the file = column names (NOTE: much faster than fread() in this case!)
-header <- readLines(gzfile(tabix_file), n = 1)
-
-# Extract column names from first line
-col_names <- strsplit(header, "\t")[[1]]
-
-# instantiate empty dataframe where statistics will be collected per gene per array and per reference panel
-#gene_stats_all <- data.frame()
-
 ## Create a list, where everything is collected, which should be displayed in the html report
 html_list <- list()
 
 
-## create a custom table container
+### load appropriate reference file for the selected population (user must select population)
+if (params$population == "eur") {
+  overview_fig_data <- fread("data/EUR_plot_data.csv") ## TODO: check if relative paths work in the actual application
+}
+
+
+### if user selected one or more arrays (chip parameter) -> filter for these arrays
+if (params$genotyped == TRUE) {
+  overview_fig_data <- overview_fig_data %>%
+    ## get array and ref_panel from identifier
+    separate_wider_delim(cols = identifier, delim = "_", names = c("array", "ref_panel"), cols_remove = FALSE) %>%
+    filter(array == params$chip)
+}
+
+overview_figure_header <- list(tags$h2("Genome-wide Imputation Quality"))
+  
+## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
+html_list <- append(html_list, overview_figure_header)
+
+### create overview plot - TODO: improve legend conent!
+lineplot <- ggplot(overview_fig_data, aes(x=bin_detailed, y=mean_r2, color = identifier)) +
+  ### draw line plot
+  geom_line()+
+  ### highlight actual data points
+  geom_point(shape=0)+
+  ## use log-scale on x-axis and display x-axis labels without trailing zeros
+  scale_x_log10(labels = function(x) as.character(x))+
+  ## manually set y-axis ticks and set limits of the y-axis (include whole range from 0 to 1)
+  scale_y_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), limits = c(0,1))+
+  xlab("Minor Allele Frequency (MAF)")+
+  ylab("Average Imputation Quality")+
+  theme_minimal()
+
+### convert to plotly object
+lineplot_plotly <- ggplotly(lineplot)
+
+## add to html list
+html_list <- append(html_list, list(lineplot_plotly))
+
+
+### define appropriate file
+tabix_file <- params$population_file
+#tabix_file <- "//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz"
+
+## Create a TabixFile object
+tbx <- TabixFile(tabix_file)
+
+## Read the first line of the file = column names (NOTE: much faster than fread() in this case!)
+header <- readLines(gzfile(tabix_file), n = 1)
+
+## Extract column names from first line
+col_names <- strsplit(header, "\t")[[1]]
+
+## instantiate empty dataframe where statistics will be collected per gene per array and per reference panel
+#gene_stats_all <- data.frame()
+
+
+
+## create a custom table container (e.g. for gene Table)
 sketch = htmltools::withTags(table(
   class = 'display',
   thead(
