@@ -3,16 +3,238 @@ title: "generate_PGS_stats"
 author: "Florian Schnitzer"
 date: "`r Sys.Date()`"
 output: html_document
+
+params:
+  pgs_folder: //wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/
+
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 
 ```{r analyze, include=FALSE}
 
-pgs_breast_cancer <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/PGS000004_hmPOS_GRCh38.txt.gz")
+### load libraries
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(Rsamtools)
+
+
+
+###### Functions ########
+
+
+### function to pass MAF bin data IF that bin exists, otherwise NA (or specified content, e.g. 0 for count)
+pass_MAF_bin_data <- function(bin_name, target_col_name, stats_df, ref_df, content_if_empty = NA) {
+  
+  if (bin_name %in% colnames(ref_df)) {
+    stats_df[target_col_name] <- ref_df[bin_name]
+  } else {
+    stats_df[target_col_name] <- content_if_empty
+  }
+  
+  return(stats_df)
+}
+
+
+### function to get r2 data for PGS variants + indel count
+get_pgs_r2_data <- function(pgs_df, tbx_obj, tbx_obj_col_names) {
+  
+  ### initalize r2_PGS_df and indel count
+  r2_ref_PGS_df <- data.frame()
+  nr_indels <- 0
+  
+  for (i in 1:nrow(pgs_df)) {
+    chr <- pgs_df[i, hm_chr] ## NOTE: regardless of genome build, chr is always provided as integer by the PGSCatalog
+    chr <- paste("chr", chr, sep = "") ## bring chr into right format for r2 reference file
+    bp <- pgs_df[i, hm_pos] ## NOTE: only use hm_pos, never chr_position (which might be on hg19)
+    a1_pgs <- pgs_df[i, effect_allele] ## extract A1 for allele control
+    a2_pgs <- pgs_df[i, other_allele] ## extract A2 for allele control
+    
+    ### check if variant is an indel
+    if (nchar(a1_pgs) > 1 | nchar(a2_pgs) > 1) {
+      nr_indels <- nr_indels + 1 ## if it is an indel increase nr_indels by 1
+    }
+    
+    ## Define genomnic regions of interest
+    region_temp <- GRanges(seqnames = chr, ranges = IRanges(start = bp, end = bp))
+    ## Extract data from the specified regions
+    result_temp <- scanTabix(tbx_obj, param = region_temp)
+    ## Parse the extracted lines into a data frame
+    lines <- unlist(result_temp)
+    data_temp <- fread(text = lines, header = F, sep = "\t")
+    
+    ## check if dataframe is NOT empty (e.g. allele check only possible when something was found)
+    if (nrow(data_temp) != 0) {
+      
+      ## pass colnames
+      colnames(data_temp) <- tbx_obj_col_names
+      
+      ### perform allele check - allele combi must match
+      
+      ## iterate over data_temp (necessary for multiallelic variants!)
+      for (j in 1:nrow(data_temp)) {
+        ## ALT allele of r2 ref file must match either to A1 or A2 in PGS ref file
+        a1_match <- data_temp[j, ALT] == a1_pgs | data_temp[j, ALT] == a2_pgs
+        ## REF allele of r2 ref file must match either to A1 or A2 in PGs ref file
+        a2_match <- data_temp[j, REF] == a1_pgs | data_temp[j, REF] == a2_pgs
+  
+        ## append result to collection df IF allele check passes
+        if (a1_match == TRUE & a2_match == TRUE) {
+          r2_ref_PGS_df <- rbind(r2_ref_PGS_df, data_temp[j, ])
+        }
+      }
+    }
+  }
+  
+  res_list <- list("nr_indels" = nr_indels, "pgs_r2_df" = r2_ref_PGS_df)
+  
+}
+
+
+
+
+### function to get pgs_statistics from pgs_r2_df
+get_pgs_statistics <- function(input_df, pgs_id, nr_var_total, nr_indels, nr_SNVs) {
+  
+  ## prepare data for statistics where bins do NOT matter
+  data_pivoted_temp <- input_df %>%
+    ## remove superfluous columns
+    select(-CHR, -POS, -REF, -ALT, -AF, -MAF, -bin, -ends_with("_in")) %>%
+    ## tidy up, get better format for reporting
+    pivot_longer(cols = everything(), names_to = "identifier", values_to = "r2") %>%
+    ## remove rows with missing values (not informative, e.g. SNP not measured by this specific combination)
+    na.omit()
+  
+  ## prepare data for statistics where bins DO matter
+  data_pivoted_binned_temp <- input_df %>%
+    ## remove superfluous columns
+    select(-CHR, -POS, -REF, -ALT, -AF, -MAF, -ends_with("_in")) %>%
+    ## tidy up, get better format for reporting
+    pivot_longer(cols = !bin, names_to = "identifier", values_to = "r2") %>%
+    ## remove rows with missing values (not informative, e.g. SNP not measured by this specific combination)
+    na.omit()
+  
+  ## get mean r2 and count (n) for each bin and for each array/ref-panel combination
+  mean_r2_per_bin <- data_pivoted_binned_temp %>%
+    group_by(bin, identifier) %>%
+    summarize(mean_r2 = round(mean(r2),3))
+  
+  count_per_bin <- data_pivoted_binned_temp %>%
+    group_by(bin, identifier) %>%
+    count()
+  
+  ## get into wide format so that the MAF bins are columns (rows are then unique per identifier)
+  mean_r2_per_bin <- mean_r2_per_bin %>%
+    pivot_wider(names_from = "bin", values_from = "mean_r2")
+  
+  count_per_bin <- count_per_bin %>%
+    pivot_wider(names_from = "bin", values_from = "n")
+  
+  ## get unique combinations of genotyping array and reference panel
+  array_ref_ids <- unique(data_pivoted_temp$identifier)
+  
+  ## instantiate empty dataframe where results will be collected
+  stats <- data.frame()
+  
+  ## iterate over all unique combinations of genotyping array and reference panel
+  for (i in 1:length(array_ref_ids)) {
+    
+    ## get array name from identifier
+    genotyping_array <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][1]
+    
+    ## get reference panel name from identifier 
+    ref_panel_name <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][2]
+    
+    ## get only data concerning a specific combination of genotyping array and reference panel
+    ref_data_subset <- data_pivoted_temp %>%
+      filter(identifier == array_ref_ids[i])
+    ref_data_bins_r2 <- mean_r2_per_bin %>%
+      filter(identifier == array_ref_ids[i])
+    ref_data_bins_n <- count_per_bin %>%
+      filter(identifier == array_ref_ids[i])
+    
+    ## get nr. of variants
+    nr_matches <- nrow(ref_data_subset)
+    
+    ## get number of high quality (r2 >= 0.8) variants
+    nr_hq_matches <- nrow(ref_data_subset[ref_data_subset$r2 >= 0.8, ])
+    
+    ### collect information for one specific combi in a dataframe
+    #stats_temp <- as.data.frame(pgs_id)
+    #stats_temp <- factor(stats_temp$pgs_id)
+    stats_temp <- as.data.frame(genotyping_array)
+    stats_temp$genotyping_array <- factor(stats_temp$genotyping_array)
+    #stats_temp$genotyping_array <- factor(genotyping_array)
+    stats_temp$ref_panel <- factor(ref_panel_name)
+    stats_temp$PGS <- pgs_id
+    stats_temp$nr_var_total <- nr_var_total
+    stats_temp$nr_indels <- nr_indels
+    stats_temp$nr_indels <- nr_indels
+    stats_temp$nr_SNVs <- nr_SNVs
+    stats_temp$nr_matches <- nr_matches
+    stats_temp$nr_hq_matches <- nr_hq_matches
+    stats_temp <- pass_MAF_bin_data("ultra_rare", "ultra_rare.mean_r2", stats_temp, ref_data_bins_r2)
+    stats_temp <- pass_MAF_bin_data("ultra_rare", "ultra_rare.n", stats_temp, ref_data_bins_n, content_if_empty = 0)
+    stats_temp <- pass_MAF_bin_data("rare", "rare.mean_r2", stats_temp, ref_data_bins_r2)
+    stats_temp <- pass_MAF_bin_data("rare", "rare.n", stats_temp, ref_data_bins_n, content_if_empty = 0)
+    stats_temp <- pass_MAF_bin_data("low_frequency", "low_freq.mean_r2", stats_temp, ref_data_bins_r2)
+    stats_temp <- pass_MAF_bin_data("low_frequency", "low_freq.n", stats_temp, ref_data_bins_n, content_if_empty = 0)
+    stats_temp <- pass_MAF_bin_data("common", "common.mean_r2", stats_temp, ref_data_bins_r2)
+    stats_temp <- pass_MAF_bin_data("common", "common.n", stats_temp, ref_data_bins_n, content_if_empty = 0)
+    
+    ## Collect data in one dataframe
+    stats <- rbind(stats, stats_temp)
+  }
+  
+  ### sort desc 1.) by nr_variants and 2.) by prop_hq_variants
+  stats <- stats %>%
+    arrange(desc(nr_matches), desc(nr_hq_matches))
+  
+  return(stats)
+  
+}
+
+
+
+
+
+
+#### MAIN ######
+
+### set working directory to folder, where all PGS files are located (PGSxxx_hmPOS_GRCh38.txt.gz)
+#setwd("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/")
+
+### get list of PGS filepaths in the pgs_folder (params argument) with correct suffix + return full name (absolute path)
+PGS_files <- list.files(params$pgs_folder, pattern = "hmPOS_GRCh38.txt.gz$", full.names = T)
+
+### get list of PGS filenames
+PGS_filenames <- list.files(params$pgs_folder, pattern = "hmPOS_GRCh38.txt.gz$")
+
+### create list of PGS names (same length as filepaths list)
+
+## preallocate with the appropriate size to speed up for loop
+PGS_names <- vector(length = length(PGS_filenames))
+
+for (i in 1:length(PGS_filenames)) {
+  ## get pgs name from filename
+  pgs_name <- strsplit(PGS_filenames[i], split="_", fixed = T)[[1]][1]
+  ## add to preallocated list by index
+  PGS_names[i] <- pgs_name
+}
+
+
+
+#pgs_breast_cancer <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/PGS000004_hmPOS_GRCh38.txt.gz")
+#pgs_trinder <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/PGS000667_hmPOS_GRCh38.txt.gz")
+
+
+#### get tabix access to r2 reference data
 
 ### define file
 tabix_file <- "//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz"
@@ -26,35 +248,72 @@ header <- readLines(gzfile(tabix_file), n = 1)
 ## Extract column names from first line
 col_names <- strsplit(header, "\t")[[1]]
 
+## initiate dataframe where results will be collected
+PGS_stats_df <- data.frame()
 
-
-
-
-
-for (i in 1:nrow(pgs_breast_cancer)) {
-  #print(pgs_breast_cancer[i, chr_name])
+for (i in 1:length(PGS_files)) {
+  
+  ## load file
+  pgs_temp <- fread(PGS_files[i])
+  
+  ## get PGS name for each PGS
+  pgs_name_temp <- PGS_names[i]
+  #print(pgs_name_temp)
+  
+  ## get nr of variants for each PGS
+  pgs_n_vars_temp <- nrow(pgs_temp)
+  #print(pgs_n_vars_temp)
+  
+  ## get r2 data + nr. of indels
+  r2_data_and_indel_count_temp <- get_pgs_r2_data(pgs_temp, tbx, col_names)
+  
+  r2_data_temp <- r2_data_and_indel_count_temp$pgs_r2_df
+  
+  pgs_n_indels_temp <- r2_data_and_indel_count_temp$nr_indels
+  
+  ## the number of single nucleotide variants (SNVs) (regardless if they are biallelic or multi-allelic) = total_variants - indel_variants
+  pgs_n_snvs_temp <- pgs_n_vars_temp - pgs_n_indels_temp
+  
+  ## create MAF column
+  r2_data_temp$MAF <- ifelse(r2_data_temp$AF <= 0.5, r2_data_temp$AF, 1-r2_data_temp$AF)
+  
+  ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
+  r2_data_temp <- r2_data_temp %>%
+    mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
+                    labels = c("ultra_rare", "rare", "low_frequency", "common")))
+  
+  ## get target dataframe with the r2 statistics for the PGS
+  r2_stats_temp <- get_pgs_statistics(r2_data_temp, pgs_id = pgs_name_temp, nr_var_total = pgs_n_vars_temp, 
+                                      nr_indels = pgs_n_indels_temp, nr_SNVs = pgs_n_snvs_temp)
+  
+  PGS_stats_df <- rbind(PGS_stats_df, r2_stats_temp)
+  
 }
 
 
-## Define genomnic regions of interest
-region_temp <- GRanges(seqnames = "chr1", ranges = IRanges(start = 100880328, end = 100880328))
 
-## Extract data from the specified regions
-result_temp <- scanTabix(tbx, param = region_temp)
 
-## Parse the extracted lines into a data frame
-lines <- unlist(result_temp)
-data_temp <- fread(text = lines, header = F, sep = "\t")
-colnames(data_temp) <- col_names
 
-## create MAF column
-data_temp$MAF <- ifelse(data_temp$AF <= 0.5, data_temp$AF, 1-data_temp$AF)
+# test_func_res <- get_pgs_r2_data(pgs_breast_cancer, tbx, col_names)
+# 
+# test_pgs_r2_df <- test_func_res$pgs_r2_df
+# 
+# ## create MAF column
+# test_pgs_r2_df$MAF <- ifelse(test_pgs_r2_df$AF <= 0.5, test_pgs_r2_df$AF, 1-test_pgs_r2_df$AF)
+# 
+# ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
+# test_pgs_r2_df <- test_pgs_r2_df %>%
+#   mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
+#                   labels = c("ultra_rare", "rare", "low_frequency", "common")))
 
-## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
-data_temp <- data_temp %>%
-  mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
-                  labels = c("ultra_rare", "rare", "low_frequency", "common")))
 
+#pgs_stats_test <- get_pgs_statistics(test_pgs_r2_df)
+
+
+
+
+
+#not_included <- pgs_breast_cancer[!pgs_breast_cancer$hm_pos %in% r2_ref_PGS_df$POS]
 
 
 
@@ -62,6 +321,9 @@ data_temp <- data_temp %>%
 
 
 ```{r plot, echo=FALSE}
+
+
+
 
 ```
 
