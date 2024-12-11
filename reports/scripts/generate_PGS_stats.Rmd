@@ -6,7 +6,8 @@ output: html_document
 
 params:
   pgs_folder: //wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/
-
+  r2_ref_data_folder: //wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/
+  output_path: //wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/
 ---
 
 ```{r setup, include=FALSE}
@@ -207,8 +208,6 @@ get_pgs_statistics <- function(input_df, pgs_id, nr_var_total, nr_indels, nr_SNV
 
 #### MAIN ######
 
-### set working directory to folder, where all PGS files are located (PGSxxx_hmPOS_GRCh38.txt.gz)
-#setwd("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/")
 
 ### get list of PGS filepaths in the pgs_folder (params argument) with correct suffix + return full name (absolute path)
 PGS_files <- list.files(params$pgs_folder, pattern = "hmPOS_GRCh38.txt.gz$", full.names = T)
@@ -229,88 +228,82 @@ for (i in 1:length(PGS_filenames)) {
 }
 
 
-
-#pgs_breast_cancer <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/PGS000004_hmPOS_GRCh38.txt.gz")
-#pgs_trinder <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/PGS_examples/PGS000667_hmPOS_GRCh38.txt.gz")
-
-
 #### get tabix access to r2 reference data
 
-### define file
-tabix_file <- "//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz"
+### get list of r2_ref data filepaths in the r2_ref_data_folder (params argument) with correct suffix + return full name (absolute path)
+pop_tabix_files <- list.files(params$r2_ref_data_folder, pattern = "bi.snv.tab.gz$", full.names = T)
 
-## Create a TabixFile object
-tbx <- TabixFile(tabix_file)
+### get corresponding list of filenames
+pop_filenames <- list.files(params$r2_ref_data_folder, pattern = "bi.snv.tab.gz$")
 
-## Read the first line of the file = column names (NOTE: much faster than fread() in this case!)
-header <- readLines(gzfile(tabix_file), n = 1)
+### iterate over the 4 different population-segragated reference files and generate PGS statistics for each (saved in separate .csv files)
+for (i in 1:length(pop_tabix_files)) {
+  
+  ## get filename
+  pop_filename <- pop_filenames[i]
+  
+  ## define file
+  tabix_file <- pop_tabix_files[i]
+  
+  ## Create a TabixFile object
+  tbx <- TabixFile(tabix_file)
+  
+  ## Read the first line of the file = column names (NOTE: much faster than fread() in this case!)
+  header <- readLines(gzfile(tabix_file), n = 1)
+  
+  ## Extract column names from first line
+  col_names <- strsplit(header, "\t")[[1]]
+  
+  ## initiate dataframe where results will be collected
+  PGS_stats_df <- data.frame()
+  
+  for (i in 1:length(PGS_files)) {
+    
+    ## load file
+    pgs_temp <- fread(PGS_files[i])
+    
+    ## get PGS name for each PGS
+    pgs_name_temp <- PGS_names[i]
+    #print(pgs_name_temp)
+    
+    ## get nr of variants for each PGS
+    pgs_n_vars_temp <- nrow(pgs_temp)
+    #print(pgs_n_vars_temp)
+    
+    ## get r2 data + nr. of indels
+    r2_data_and_indel_count_temp <- get_pgs_r2_data(pgs_temp, tbx, col_names)
+    
+    r2_data_temp <- r2_data_and_indel_count_temp$pgs_r2_df
+    
+    pgs_n_indels_temp <- r2_data_and_indel_count_temp$nr_indels
+    
+    ## the number of single nucleotide variants (SNVs) (regardless if they are biallelic or multi-allelic) = total_variants - indel_variants
+    pgs_n_snvs_temp <- pgs_n_vars_temp - pgs_n_indels_temp
+    
+    ## create MAF column
+    r2_data_temp$MAF <- ifelse(r2_data_temp$AF <= 0.5, r2_data_temp$AF, 1-r2_data_temp$AF)
+    
+    ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
+    r2_data_temp <- r2_data_temp %>%
+      mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
+                      labels = c("ultra_rare", "rare", "low_frequency", "common")))
+    
+    ## get target dataframe with the r2 statistics for the PGS
+    r2_stats_temp <- get_pgs_statistics(r2_data_temp, pgs_id = pgs_name_temp, nr_var_total = pgs_n_vars_temp, 
+                                        nr_indels = pgs_n_indels_temp, nr_SNVs = pgs_n_snvs_temp)
+    
+    PGS_stats_df <- rbind(PGS_stats_df, r2_stats_temp)
+    
+  }
+  
+  ### important: add extension to pop_filename -> so that it can be accessed in index with population_file parameter but does NOT overwrite this file
+  outfile_name <- paste(pop_filename, ".pgs.csv", sep = "")
+  
+  outfile_path <- paste(params$output_path, outfile_name, sep = "")
+  
+  write.table(PGS_stats_df, file = outfile_path, quote = F, row.names = F, sep = "\t")
 
-## Extract column names from first line
-col_names <- strsplit(header, "\t")[[1]]
-
-## initiate dataframe where results will be collected
-PGS_stats_df <- data.frame()
-
-for (i in 1:length(PGS_files)) {
-  
-  ## load file
-  pgs_temp <- fread(PGS_files[i])
-  
-  ## get PGS name for each PGS
-  pgs_name_temp <- PGS_names[i]
-  #print(pgs_name_temp)
-  
-  ## get nr of variants for each PGS
-  pgs_n_vars_temp <- nrow(pgs_temp)
-  #print(pgs_n_vars_temp)
-  
-  ## get r2 data + nr. of indels
-  r2_data_and_indel_count_temp <- get_pgs_r2_data(pgs_temp, tbx, col_names)
-  
-  r2_data_temp <- r2_data_and_indel_count_temp$pgs_r2_df
-  
-  pgs_n_indels_temp <- r2_data_and_indel_count_temp$nr_indels
-  
-  ## the number of single nucleotide variants (SNVs) (regardless if they are biallelic or multi-allelic) = total_variants - indel_variants
-  pgs_n_snvs_temp <- pgs_n_vars_temp - pgs_n_indels_temp
-  
-  ## create MAF column
-  r2_data_temp$MAF <- ifelse(r2_data_temp$AF <= 0.5, r2_data_temp$AF, 1-r2_data_temp$AF)
-  
-  ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
-  r2_data_temp <- r2_data_temp %>%
-    mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
-                    labels = c("ultra_rare", "rare", "low_frequency", "common")))
-  
-  ## get target dataframe with the r2 statistics for the PGS
-  r2_stats_temp <- get_pgs_statistics(r2_data_temp, pgs_id = pgs_name_temp, nr_var_total = pgs_n_vars_temp, 
-                                      nr_indels = pgs_n_indels_temp, nr_SNVs = pgs_n_snvs_temp)
-  
-  PGS_stats_df <- rbind(PGS_stats_df, r2_stats_temp)
-  
 }
-
-
-
-
-
-# test_func_res <- get_pgs_r2_data(pgs_breast_cancer, tbx, col_names)
-# 
-# test_pgs_r2_df <- test_func_res$pgs_r2_df
-# 
-# ## create MAF column
-# test_pgs_r2_df$MAF <- ifelse(test_pgs_r2_df$AF <= 0.5, test_pgs_r2_df$AF, 1-test_pgs_r2_df$AF)
-# 
-# ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
-# test_pgs_r2_df <- test_pgs_r2_df %>%
-#   mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
-#                   labels = c("ultra_rare", "rare", "low_frequency", "common")))
-
-
-#pgs_stats_test <- get_pgs_statistics(test_pgs_r2_df)
-
-
-
 
 
 #not_included <- pgs_breast_cancer[!pgs_breast_cancer$hm_pos %in% r2_ref_PGS_df$POS]
@@ -320,11 +313,6 @@ for (i in 1:length(PGS_files)) {
 ```
 
 
-```{r plot, echo=FALSE}
 
-
-
-
-```
 
 
