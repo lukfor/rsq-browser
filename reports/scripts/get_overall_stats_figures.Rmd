@@ -1,26 +1,12 @@
 ---
+title: "generate_PGS_stats"
+author: "Florian Schnitzer"
+date: "`r Sys.Date()`"
+output: html_document
+
 params:
-  snps: "rs12345"
-  rare_variant_analysis: yes
-  genotyped: yes
-  chip: MEGA
-  genes: LPA
-  genes_coordinates: 17:7661779-7687538
-  
-format:
-  html:
-    pagetitle: "Rsq Browser"
-    body-classes: "bg-light"
-    page-layout: custom
-    embed-resources: true
-    toc: false
-    title-block-style	: none
-    title-block-banner: false
-    date-format: "D MMMM YYYY"  
-    include-before-body: "template/navbar.view.html"  
-    include-after-body: "template/footer.view.html"  
-    include-in-header:
-      - file: template/header.html
+  r2_ref_data_folder: //wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/
+  output_path: //wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/
 ---
 
 ```{r setup, include=FALSE}
@@ -31,107 +17,132 @@ library(Rsamtools)
 library(data.table)
 library(tidyr)
 library(dplyr)
+library(stringr)
 library(ggplot2)
 library(plotly)
-library(DT)
+#library(DT)
 
 ```
 
 
 ```{r load_data, include = FALSE}
 
-## mlof.bi.snv.tab.gz <- file with population = EUR
+###### Functions #######
 
-eur_data <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz")
-
-### manually add nr. of genotyped variants for each chips for EUR
-array_list <- c("IO", "MG", "OE", "HC")
-nr_genotyped_var_list <- c(2330998, 1759171, 706652, 288599)
-
-genotype_info <- as.data.frame(array_list)
-genotype_info$nr_geno_var <- nr_genotyped_var_list
-
-### chips
-## HC - Core
-## OE - OmniExpress
-## IO - (Infinium)Omni2.5
-## MG - MEGA
-
-### ref panels
-## 1kg - 1000 Genomes
-## hrc - HRC
-## top - TOPMed
-
-
-## create MAF column
-eur_data$MAF <- ifelse(eur_data$AF <= 0.5, eur_data$AF, 1-eur_data$AF)
-
-## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
-## and more detailed bins for plotting (line plot)
-eur_data <- eur_data %>%
+## function to generate df with compressed information and correct format for the "overview plot"
+get_overview_plot_df <- function(population_df) {
+  
+  ## create MAF column
+  population_df$MAF <- ifelse(population_df$AF <= 0.5, population_df$AF, 1-population_df$AF)
+  
+  ## create bins based on MAF (detailed -> better for plotting)
+  population_df <- population_df %>%
   select(-CHR, -POS, -REF, -ALT, -AF) %>%
-  mutate(bin_compact = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
-                  labels = c("ultra_rare", "rare", "low_frequency", "common")),
-         bin_detailed = cut(MAF, breaks = c(0.0000, 0.0005, 0.001, 0.002, 0.005, 0.010, 0.015,
+  mutate(bin_detailed = cut(MAF, breaks = c(0.0000, 0.0005, 0.001, 0.002, 0.005, 0.010, 0.015,
                                      0.020, 0.035, 0.050, 0.100, 0.200, 0.300, 0.400, 0.500),
                     labels = c(0.0005, 0.001, 0.002, 0.005, 0.01, 0.015, 0.02,
                                0.035, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)))
-
-#colnames_eur_data <- colnames(eur_data)
-#array_ref_panel_id <- colnames_eur_data[6:29]
-
-## create vector for array_ref_panel identifiers
-identifier_vec <- colnames(eur_data)
-identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("_in"))]
-identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("bin_"))]
-identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("MAF"))]
-
-
-
-plot_eur_df <- data.frame()
-
-
-for (i in 1:length(identifier_vec)) {
   
-  id_for_dplyr <- sym(identifier_vec[i])
+  ## create vector for array_ref_panel identifiers
+  identifier_vec <- colnames(population_df)
+  identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("_in"))]
+  identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("bin_"))]
+  identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("MAF"))]
   
-  temp_stats <- eur_data %>%
-    select(!! id_for_dplyr, bin_detailed) %>%
-    na.omit()
+  ## initiate df
+  plot_df <- data.frame()
+  
+  ## iterate over unique combis and collect data in the desired format for plotting
+  for (i in 1:length(identifier_vec)) {
+    
+    ## make identifier_vec elements accessible within dplyr functions
+    id_for_dplyr <- sym(identifier_vec[i])
+    
+    ## select only data from one combi and remove NAs
+    temp_stats <- population_df %>%
+      select(!! id_for_dplyr, bin_detailed) %>%
+      na.omit()
+    
+    ## then group by bin and calculate the mean for this combi per bin, add identifier as additional column
+    temp_stats <- temp_stats %>%
+      group_by(bin_detailed) %>%
+      summarize(mean_r2 = mean(!! id_for_dplyr)) %>%
+      mutate(identifier = identifier_vec[i])
+    
+    ## append to plot_df
+    plot_df <- rbind(plot_df, temp_stats)
+  }
+  
+  
+  plot_df <- plot_df %>%
+    ## change bin column to numeric
+    mutate(bin_detailed = as.numeric(sub("0+$", "", as.character(bin_detailed)))) %>%
+           ## split identifier to get columns with array and ref_panel names
+           separate_wider_delim(cols = identifier, ## column to separate/split
+                         delim = "_", ## delimiter to separate/split on
+                         names = c("genotyping_array", "ref_panel"),  ## names of output columns from split results
+                         cols_remove = FALSE) ## explicitly keep the input column
+  
+  return(plot_df)
 
-  temp_stats <- temp_stats %>%
-    group_by(bin_detailed) %>%
-    summarize(mean_r2 = mean(!! id_for_dplyr)) %>%
-    mutate(identifier = identifier_vec[i])
-  
-  plot_eur_df <- rbind(plot_eur_df, temp_stats)
 }
 
 
-plot_eur_df <- plot_eur_df %>%
-  mutate(bin_detailed = as.numeric(sub("0+$", "", as.character(bin_detailed))))
+
+
+#### MAIN ######
+
+### get list of r2_ref data filepaths in the r2_ref_data_folder (params argument) with correct suffix + return full name (absolute path)
+pop_files <- list.files(params$r2_ref_data_folder, pattern = "bi.snv.tab.gz$", full.names = T)
+
+### get corresponding list of filenames
+pop_filenames <- list.files(params$r2_ref_data_folder, pattern = "bi.snv.tab.gz$")
+
+
+## for each population file generate plot_df and save to csv
+for (i in 1:length(pop_files)) {
+  
+  pop_filename <- pop_filenames[i]
+
+  pop_data <- fread(pop_files[i])
+  
+  ## CAVE: one small error in row 5809321 (not counting the header row) -> "0.65.343" in column "IO_1kg" in the biome.bi.snv.tab.gz
+  ## remedy by setting this column as.numeric -> erroneous value will be replaced with NA (will cause a warning for this file)
+  pop_data <- pop_data %>%
+    mutate(IO_1kg = as.numeric(IO_1kg))
+  
+  plot_pop_dat <- get_overview_plot_df(pop_data)
+  
+  ### important: add extension to pop_filename -> so that it can be accessed in index with population_file parameter but does NOT overwrite this file
+  outfile_name <- paste(pop_filename, ".plot.csv", sep = "")
+  
+  outfile_path <- paste(params$output_path, outfile_name, sep = "")
+  
+  
+  write.table(plot_pop_dat, file = outfile_path, quote = F, row.names = F, sep = "\t")
+  
+}
+
+
 
 
 #### test if figure can be created from plot_eur_df
-lineplot <- ggplot(plot_eur_df, aes(x=bin_detailed, y=mean_r2, color = identifier)) +
-  ### draw line plot
-  geom_line()+
-  ### highlight actual data points
-  geom_point(shape=0)+
-  ## use log-scale on x-axis and display x-axis labels without trailing zeros
-  scale_x_log10(labels = function(x) as.character(x))+
-  ## manually set y-axis ticks and set limits of the y-axis (include whole range from 0 to 1)
-  scale_y_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), limits = c(0,1))+
-  xlab("Minor Allele Frequency (MAF)")+
-  ylab("Average Imputation Quality")+
-  theme_minimal()
+# lineplot <- ggplot(plot_df_eur, aes(x=bin_detailed, y=mean_r2, color = identifier)) +
+#   ### draw line plot
+#   geom_line()+
+#   ### highlight actual data points
+#   geom_point(shape=0)+
+#   ## use log-scale on x-axis and display x-axis labels without trailing zeros
+#   scale_x_log10(labels = function(x) as.character(x))+
+#   ## manually set y-axis ticks and set limits of the y-axis (include whole range from 0 to 1)
+#   scale_y_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), limits = c(0,1))+
+#   xlab("Minor Allele Frequency (MAF)")+
+#   ylab("Average Imputation Quality")+
+#   theme_minimal()
+# 
+# ### convert to plotly object
+# lineplot_plotly <- ggplotly(lineplot)
 
-### convert to plotly object
-lineplot_plotly <- ggplotly(lineplot)
-
-
-write.table(plot_eur_df, file = "//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/reports/wizard/data/EUR_plot_data.csv", 
-            row.names = FALSE, quote = FALSE, sep = " ")
 
 
 #### Open questions for this plot #######
@@ -152,236 +163,7 @@ lineplot_plotly
 
 
 
-```{r old_code_temp, include=FALSE}
 
-# nr_imputed <- eur_data %>%
-#   ### remove superfluous columns
-#   select(ends_with("_in")) %>%
-#   ### tidy up, get into better format for plotting
-#   pivot_longer(., names_to = "id", values_to = "in") 
-
-
-
-
-
-
-
-# chr <- paste("chr", strsplit(params$genes_coordinates, split=":", fixed = T)[[1]][1], sep = "")
-# coord <- strsplit(params$genes_coordinates, split=":", fixed = T)[[1]][2]
-# start_pos <- strsplit(coord, split="-", fixed = T)[[1]][1]
-# stop_pos <- strsplit(coord, split="-", fixed = T)[[1]][2]
-# 
-# 
-# chr6_data <- eur_data[eur_data$CHR=="chr6"]
-# min(chr6_data$POS) ### first marker at POS=69519 -> so in the coordinates 6:1111-2222 there is NO marker (empty data frame is correct -> no statistics)
-
-
-
-# sum(eur_data$HC_1kg_in) # 21853114
-
-
-# Define the genomic region(s) of interest
-#regions <- GRanges(seqnames = "chr17", ranges = IRanges(start = 7661779, end = 7687538))
-#regions <- GRanges(seqnames = "chr6", ranges = IRanges(start = 1111, end = 15222))
-#regions <- GRanges(seqnames = chr, ranges = IRanges(start = start_pos, end = stop_pos))
-
-# Extract data from the specified regions
-#result <- scanTabix(tbx, param = regions)
-
-# Parse the extracted lines into a data frame
-#lines <- unlist(result)
-
-#data <- fread(text = lines, header = F, sep = "\t")
-
-
-#col_names <- names(fread(tabix_file, nrows = 0))
-
-#colnames(data) <- col_names
-
-
-#data$MAF <- ifelse(data$AF <= 0.5, data$AF, 1-data$AF)
-
-### create bin column with bin information
-# data <- data %>%
-#   mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.001, 0.002, 0.005, 0.010, 0.015,
-#                                     0.020, 0.035, 0.050, 0.100, 0.200, 0.300, 0.400, 0.500),
-#                    labels = c(0.0005, 0.001, 0.002, 0.005, 0.01, 0.015, 0.02,
-#                               0.035, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)))
-
-# data <- data %>%
-#   mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
-#                   labels = c("Ultra-rare", "Rare", "Low-frequency", "Common")))
-# 
-# 
-# data_plot <- data %>%
-#   ### remove superfluous columns
-#   select(-CHR, -POS, -REF, -ALT, -AF, -MAF, -ends_with("_in")) %>%
-#   ### tidy up, get into better format for plotting
-#   pivot_longer(!bin, names_to = "chip_identifier", values_to = "chip_r2") %>%
-#   ### change bin variable to numeric for line plot
-#   #mutate(bin = as.numeric(as.character(bin))) %>%
-#   ### remove rows with missing values (there is only one value column and if this is NA then the row is not informative)
-#   na.omit()
-# 
-# ### calculate mean for each bin and each unique combination of array and reference panel
-# data_plot <- data_plot %>%
-#   group_by(bin, chip_identifier) %>%
-#   summarize(mean_r2 = mean(chip_r2))
-# 
-# 
-# test <- data_plot %>%
-#   pivot_wider(names_from = "bin", values_from = "mean_r2")
-# 
-# 
-# ### combinations: 4 chips x 3 ref_panels x 14 bins = 168 data points for the plot
-# 
-# lineplot <- ggplot(data_plot, aes(x=bin, y=mean_r2, color = chip_identifier)) +
-#   ### draw line plot
-#   geom_line()+
-#   ### highlight actual data points
-#   geom_point(shape=0)+
-#   ## use log-scale on x-axis and display x-axis labels without trailing zeros
-#   scale_x_log10(labels = function(x) as.character(x))+
-#   ## manually set y-axis ticks and set limits of the y-axis (include whole range from 0 to 1)
-#   scale_y_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), limits = c(0,1))+
-#   xlab("Minor Allele Frequency (MAF)")+
-#   ylab("Average Imputation Quality")+
-#   theme_minimal()
-# 
-# ### convert to plotly object
-# lineplot_plotly <- ggplotly(lineplot)
-
-
-
-
-
-#### get gene coordinates as CHR/START/STOP from gene_coordinates input parameter
-# chr_vec <- c()
-# start_pos_vec <- c()
-# stop_pos_vec <- c()
-# 
-# for (item in params$genes_coordinates) {
-#   ## required to add "chr" to chromosome number -> reference files store chromosome information in the format "chr1"
-#   chr_temp <- paste("chr", strsplit(item, split=":", fixed = T)[[1]][1], sep = "")
-#   coord_temp <- strsplit(item, split=":", fixed = T)[[1]][2]
-#   start_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][1])
-#   stop_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][2])
-#   chr_vec <- c(chr_vec, chr_temp)
-#   start_pos_vec <- c(start_pos_vec, start_pos_temp)
-#   stop_pos_vec <- c(stop_pos_vec, stop_pos_temp)
-# }
-
-
-
-#### get gene coordinates as CHR/START/STOP from gene_coordinates input parameter
-## required to add "chr" to chromosome number -> reference files store chromosome information in the format "chr1"
-# chr <- paste("chr", strsplit(params$genes_coordinates, split=":", fixed = T)[[1]][1], sep = "")
-# coord <- strsplit(params$genes_coordinates, split=":", fixed = T)[[1]][2]
-# start_pos <- as.integer(strsplit(coord, split="-", fixed = T)[[1]][1])
-# stop_pos <- as.integer(strsplit(coord, split="-", fixed = T)[[1]][2])
-
-### Define genomnic regions of interest and collect them in the regions vector
-#regions <- c()
-
-
-# # Define the genomic region(s) of interest
-# regions <- GRanges(seqnames = "chr17", ranges = IRanges(start = 7661779, end = 7687538))
-# #regions <- GRanges(seqnames = "chr6", ranges = IRanges(start = 1111, end = 15222))
-# #regions <- GRanges(seqnames = chr, ranges = IRanges(start = start_pos, end = stop_pos))
-# 
-# # Extract data from the specified regions
-# result <- scanTabix(tbx, param = regions)
-# 
-# # Parse the extracted lines into a data frame
-# lines <- unlist(result)
-# 
-# data <- fread(text = lines, header = F, sep = "\t")
-
-
-
-
-
-### add colnames to the data
-#colnames(data) <- col_names
-
-# for (i in 1:length(params$genes_coordinates)) {
-#   print(params$genes[i])
-# }
-# 
-# 
-# for (i in 1:length(params$genes)) {
-#   gene <- params$genes[i]
-#   data_gene_table <- as.data.frame(gene)
-# }
-
-
-
-
-
-
-
-# pivoted_data <- data %>%
-#   ### remove superfluous columns
-#   select(-CHR, -POS, -REF, -ALT, -AF, -ends_with("_in")) %>%
-#   ### tidy up, get into better format for plotting
-#   pivot_longer(cols = everything(), names_to = "identifier", values_to = "r2")
-# 
-# array_ref_ids <- unique(pivoted_data$identifier)
-# 
-# 
-# ### iterate over all unique combinations of genotyping array and reference panel
-# for (i in 1:length(array_ref_ids)) {
-#   ## get array name from identifier
-#   array_name <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][1]
-#   print(array_name)
-#   ## get reference panel name from identifier 
-#   ref_panel_name <- strsplit(array_ref_ids[i], split="_", fixed = T)[[1]][2]
-#   print(ref_panel_name)
-#   
-#   ## get only data concerning a specific combination of genotyping array and reference panel
-#   ref_data_subset <- pivoted_data %>%
-#     filter(identifier == array_ref_ids[i])
-#   
-#   ## remove rows with NA (e.g. SNP not measured by this specific combination)
-#   ref_data_subset <- na.omit(ref_data_subset)
-#   
-#   ## get nr. of variants
-#   nr_var <- nrow(ref_data_subset)
-#   print(nr_var)
-#   
-#   ## get proportion of high quality (r2 >= 0.8) variants
-#   prop_hq_var <- nrow(ref_data_subset[ref_data_subset$r2 >= 0.8, ])/nr_var
-#   print(prop_hq_var)
-# }
-
-
-
-# ex_chip_id <- "IO_top"
-# 
-# test_subset <- pivoted_data %>%
-#   filter(identifier == ex_chip_id)
-# 
-# chip_ex <- strsplit(ex_chip_id, split="_", fixed = T)[[1]][1]
-# ref_panel_ex <- strsplit(ex_chip_id, split="_", fixed = T)[[1]][2]
-# 
-# test_subset_clean <- na.omit(test_subset)
-# 
-# nr_var <- nrow(test_subset_clean)
-# high_quality_var <- nrow(test_subset_clean[test_subset_clean$r2 >= 0.8,])/nrow(test_subset_clean)
-
-
-# gene <- "exGene"
-# data_gene_table <- as.data.frame(gene)
-# data_gene_table$array <- chip_ex
-# data_gene_table$ref_panel <-ref_panel_ex
-# data_gene_table$nr_variants <- nr_var
-# data_gene_table$perc_hq_variants <- high_quality_var
-# 
-# datatable(data_gene_table)
-
-
-
-```
 
 
 
