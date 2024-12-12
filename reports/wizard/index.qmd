@@ -59,6 +59,20 @@ library(htmltools)
 
 ######## FUNCTIONS #########
 
+
+### function to pass MAF bin data IF that bin exists, otherwise NA (or specified content, e.g. 0 for count)
+pass_MAF_bin_data <- function(bin_name, target_col_name, stats_df, ref_df, content_if_empty = NA) {
+  
+  if (bin_name %in% colnames(ref_df)) {
+    stats_df[target_col_name] <- ref_df[bin_name]
+  } else {
+    stats_df[target_col_name] <- content_if_empty
+  }
+  
+  return(stats_df)
+}
+
+
 ### define function to get gene-level statistics for each combination of genotyping array and reference panel
 get_gene_statistics <- function(input_df, gene_name) {
   
@@ -114,13 +128,19 @@ get_gene_statistics <- function(input_df, gene_name) {
     ## get only data concerning a specific combination of genotyping array and reference panel
     ref_data_subset <- data_pivoted_temp %>%
       filter(identifier == array_ref_ids[i])
-    ref_data_bins_subset <- mean_r2_per_bin %>%
+    mean_r2_per_bin_subset <- mean_r2_per_bin %>%
       filter(identifier == array_ref_ids[i])
-    ref_data_bins_subset2 <- count_per_bin %>%
+    count_per_bin_subset <- count_per_bin %>%
       filter(identifier == array_ref_ids[i])
     
     ## get nr. of variants
     nr_var <- nrow(ref_data_subset)
+    
+    ## get percentage relative to the total nr. of variants for a certain combination
+    perc_per_bin_subset <- count_per_bin_subset %>%
+      ## divide all MAF bin columns by nr_var
+      mutate(across(c(ultra_rare, rare, low_frequency, common), ~ . /nr_var))
+    
     
     ## get proportion of high quality (r2 >= 0.8) variants
     prop_hq_var <- nrow(ref_data_subset[ref_data_subset$r2 >= 0.8, ])/nr_var
@@ -133,14 +153,14 @@ get_gene_statistics <- function(input_df, gene_name) {
     stats_temp$ref_panel <- factor(ref_panel_name)
     stats_temp$nr_variants <- nr_var
     stats_temp$prop_hq_variants <- prop_hq_var
-    stats_temp$ultra_rare.mean_r2 <- ref_data_bins_subset$ultra_rare
-    stats_temp$ultra_rare.perc_n <- ref_data_bins_subset2$ultra_rare/nr_var
-    stats_temp$rare.mean_r2 <- ref_data_bins_subset$rare
-    stats_temp$rare.perc_n <- ref_data_bins_subset2$rare/nr_var
-    stats_temp$low_freq.mean_r2 <- ref_data_bins_subset$low_frequency
-    stats_temp$low_freq.perc_n <- ref_data_bins_subset2$low_frequency/nr_var
-    stats_temp$common.mean_r2 <- ref_data_bins_subset$common
-    stats_temp$common.perc_n <- ref_data_bins_subset2$common/nr_var
+    stats_temp <- pass_MAF_bin_data("ultra_rare", "ultra_rare.mean_r2", stats_temp, mean_r2_per_bin_subset)
+    stats_temp <- pass_MAF_bin_data("ultra_rare", "ultra_rare.perc_n", stats_temp, perc_per_bin_subset, content_if_empty = 0)
+    stats_temp <- pass_MAF_bin_data("rare", "rare.mean_r2", stats_temp, mean_r2_per_bin_subset)
+    stats_temp <- pass_MAF_bin_data("rare", "rare.perc_n", stats_temp, perc_per_bin_subset, content_if_empty = 0)
+    stats_temp <- pass_MAF_bin_data("low_frequency", "low_freq.mean_r2", stats_temp, mean_r2_per_bin_subset)
+    stats_temp <- pass_MAF_bin_data("low_frequency", "low_freq.perc_n", stats_temp, perc_per_bin_subset, content_if_empty = 0)
+    stats_temp <- pass_MAF_bin_data("common", "common.mean_r2", stats_temp, mean_r2_per_bin_subset)
+    stats_temp <- pass_MAF_bin_data("common", "common.perc_n", stats_temp, perc_per_bin_subset, content_if_empty = 0)
     
     ## Collect data in one dataframe
     stats <- rbind(stats, stats_temp)
