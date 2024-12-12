@@ -318,8 +318,8 @@ col_names <- strsplit(header, "\t")[[1]]
 
 
 
-## create a custom table container (e.g. for gene Table)
-sketch = htmltools::withTags(table(
+## create a custom table container for gene Table
+sketch_gene_table = htmltools::withTags(table(
   class = 'display',
   thead(
     tr(
@@ -346,74 +346,112 @@ sketch = htmltools::withTags(table(
     )
 ))
 
+## create a custom table container for PGS Table
+sketch_pgs_table = htmltools::withTags(table(
+  class = 'display',
+  thead(
+    tr(
+      th(rowspan = 2, 'Genotyping Array'),
+      th(rowspan = 2, 'Reference Panel'),
+      th(rowspan = 2, 'n Variants'),
+      th(rowspan = 2, 'n Indels'),
+      th(rowspan = 2, 'n SNVs'),
+      th(rowspan = 2, 'n Matches'),
+      th(rowspan = 2, style = "border-right: solid 2px;", "n Matches r2 \u2265 0.8"), ### NOTE: \u2265 = Unicode character for greater-than-or-equal-to
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Ultra-rare (MAF<0.5%)'),
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Rare (MAF 0.5-1%)'),
+      th(colspan = 2, style = "text-align:center;border-right: solid 2px;", 'Low-frequency (MAF 1-5%)'),
+      th(colspan = 2, style = "text-align:center;", 'Common (MAF>5%)')
+      ),
+        tr(
+          #lapply(rep(c('mean r2', 'n Variants'), 4), th)
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "n Variants"),
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "n Variants"),
+          th("mean r2"),
+          th(style = "border-right: solid 2px;", "n Variants"),
+          th("mean r2"),
+          th("n Variants")
+      )
+    )
+))
 
-### iterate over all genes with genes_coordinates parameter
-for (i in 1:length(params$genes_coordinates)) {
-  
-  ## get gene name
-  gene <- params$genes[i]
-  
-  ## get gene coordinates as CHR/START/STOP from gene_coordinates input parameter
-  chr_temp <- strsplit(params$genes_coordinates[i], split=":", fixed = T)[[1]][1]
-  coord_temp <- strsplit(params$genes_coordinates[i], split=":", fixed = T)[[1]][2]
-  start_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][1])
-  stop_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][2])
-  
-  ## Define genomnic regions of interest
-  region_temp <- GRanges(seqnames = chr_temp, ranges = IRanges(start = start_pos_temp, end = stop_pos_temp))
-  
-  ## Extract data from the specified regions
-  result_temp <- scanTabix(tbx, param = region_temp)
-  
-  ## Parse the extracted lines into a data frame
-  lines <- unlist(result_temp)
-  data_temp <- fread(text = lines, header = F, sep = "\t")
-  colnames(data_temp) <- col_names
-  
-  ## create MAF column
-  data_temp$MAF <- ifelse(data_temp$AF <= 0.5, data_temp$AF, 1-data_temp$AF)
-  
-  ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
-  data_temp <- data_temp %>%
-    mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
-                    labels = c("ultra_rare", "rare", "low_frequency", "common")))
-  
-  
-  ## for each gene (e.g. each set of gene coordinates) get useful statistics
-  gene_stats_temp <- get_gene_statistics(data_temp, gene)
-  
-  ## get Table header in the markdown format of h2 and set content to gene name
-  header <- list(tags$h2(gene))
-  ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
-  html_list <- append(html_list, header)
-
-  ## get datatable with appropriate styling
-  styled_table <- list(datatable(gene_stats_temp, filter = "top", rownames = FALSE, 
-                                 # colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames -> not required with sketch!
-                                 #              "Reference Panel" = "ref_panel",
-                                 #              "n Variants" = "nr_variants",
-                                 #              "% Varaints r2 >= 0.8" = "prop_hq_variants"), 
-                                 container = sketch,
-                                 escape = F,
-                                 options = list(
-                                  pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
-                                  lengthChange = F, ## remove "Show entries" dropdown
-                                  paging = F ## disable pagination of Table (not required when all rows are shown)
-                                  #columnDefs = list(list(className = 'dt-center', targets = 0:length(gene_stats_temp)))
-                                  )) %>%
-                                  ### display selected columns with '%' sign - CAVE: expects proportion as input
-                                  formatPercentage(c("prop_hq_variants", "ultra_rare.perc_n", "rare.perc_n", "low_freq.perc_n", "common.perc_n"),
-                                                   digits = 2) %>%
-                                  ### set custom format for selected columns
-                                  formatStyle(columns = c('ultra_rare.mean_r2', 'rare.mean_r2', 'low_freq.mean_r2', 'common.mean_r2'),
-                                            backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
-                                            color = c("white")) %>%
-                                  formatStyle(columns = c(4, 6, 8, 10), `border-right` = "solid 4px"))
+## generate gene tables and corresponding headers ONLY if the user requested at least one gene
+## if no genes are chosen by user we get an empty list for the genes_coordinates parameter
+if (length(params$genes_coordinates) != 0) {
     
+  ### iterate over all genes with genes_coordinates parameter
+  for (i in 1:length(params$genes_coordinates)) {
+    
+    ## get gene name
+    gene <- params$genes[i]
+    
+    ## get gene coordinates as CHR/START/STOP from gene_coordinates input parameter
+    chr_temp <- strsplit(params$genes_coordinates[i], split=":", fixed = T)[[1]][1]
+    coord_temp <- strsplit(params$genes_coordinates[i], split=":", fixed = T)[[1]][2]
+    start_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][1])
+    stop_pos_temp <- as.integer(strsplit(coord_temp, split="-", fixed = T)[[1]][2])
+    
+    ## Define genomnic regions of interest
+    region_temp <- GRanges(seqnames = chr_temp, ranges = IRanges(start = start_pos_temp, end = stop_pos_temp))
+    
+    ## Extract data from the specified regions
+    result_temp <- scanTabix(tbx, param = region_temp)
+    
+    ## Parse the extracted lines into a data frame
+    lines <- unlist(result_temp)
+    data_temp <- fread(text = lines, header = F, sep = "\t")
+    colnames(data_temp) <- col_names
+    
+    ## create MAF column
+    data_temp$MAF <- ifelse(data_temp$AF <= 0.5, data_temp$AF, 1-data_temp$AF)
+    
+    ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
+    data_temp <- data_temp %>%
+      mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
+                      labels = c("ultra_rare", "rare", "low_frequency", "common")))
+    
+    
+    ## for each gene (e.g. each set of gene coordinates) get useful statistics
+    gene_stats_temp <- get_gene_statistics(data_temp, gene)
+    
+    ## get Table header in the markdown format of h2 and set content to gene name
+    header <- list(tags$h2(gene))
+    ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
+    html_list <- append(html_list, header)
   
-  html_list <- append(html_list, styled_table)
-
+    ## get datatable with appropriate styling
+    styled_table <- list(datatable(gene_stats_temp, filter = "top", rownames = FALSE, 
+                                   # colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames -> not required with sketch!
+                                   #              "Reference Panel" = "ref_panel",
+                                   #              "n Variants" = "nr_variants",
+                                   #              "% Varaints r2 >= 0.8" = "prop_hq_variants"), 
+                                   container = sketch_gene_table,
+                                   escape = F,
+                                   options = list(
+                                    pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
+                                    lengthChange = F, ## remove "Show entries" dropdown
+                                    paging = F ## disable pagination of Table (not required when all rows are shown)
+                                    #columnDefs = list(list(className = 'dt-center', targets = 0:length(gene_stats_temp)))
+                                    )) %>%
+                                    ### display selected columns with '%' sign - CAVE: expects proportion as input
+                                    formatPercentage(c("prop_hq_variants", "ultra_rare.perc_n", "rare.perc_n", "low_freq.perc_n", "common.perc_n"),
+                                                     digits = 2) %>%
+                                    ### set custom format for selected columns
+                                    formatStyle(columns = c('ultra_rare.mean_r2', 'rare.mean_r2', 'low_freq.mean_r2', 'common.mean_r2'),
+                                              backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
+                                              color = c("white")) %>%
+                                    formatStyle(columns = c(4, 6, 8, 10), `border-right` = "solid 4px"))
+      
+    
+    html_list <- append(html_list, styled_table)
+  
+  }
+  
 }
+
+
 
 
 ## generate SNP table and corresponding header ONLY if the user requested at least one SNP
@@ -480,6 +518,62 @@ if (length(params$snps) != 0) {
   html_list <- append(html_list, styled_snp_table)
   
 }
+
+
+
+
+## generate PGS tables and corresponding headers ONLY if the user requested at least one PGS
+## if no PGS is chosen by user we get an empty list for the pgs parameter
+if (length(params$pgs) != 0) {
+
+  ### load (only if required) the PGS reference file for the appropriate population
+  pgs_ref_stats <- fread(paste(params$population_file, ".pgs.csv", sep = ""))
+  
+  
+  ### iterate over all scores with pgs parameter
+  for (i in 1:length(params$pgs)) {
+    
+    ## get PGS name
+    PGS_name <- params$pgs[i]
+    
+    ## get Table header in the markdown format of h2 and set content to PGS name
+    header <- list(tags$h2(PGS_name))
+    ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
+    html_list <- append(html_list, header)
+    
+    ## filter for PGS of interest
+    pgs_queried <- pgs_ref_stats %>%
+      filter(PGS == PGS_name) %>%
+      ### remove PGS column
+      select(-PGS)
+    
+    ## get datatable with appropriate styling
+    styled_pgs_table <- list(datatable(pgs_queried, filter = "top", rownames = FALSE,
+                                   container = sketch_pgs_table,
+                                   escape = F,
+                                   options = list(
+                                    pageLength = nrow(pgs_queried), ## show all rows (at most 12 combinations -> nicer if everything is shown directly)
+                                    lengthChange = F, ## remove "Show entries" dropdown
+                                    paging = F ## disable pagination of Table (not required when all rows are shown)
+                                    #columnDefs = list(list(className = 'dt-center', targets = 0:length(gene_stats_temp)))
+                                    )) %>%
+                                    ### display selected columns with '%' sign - CAVE: expects proportion as input
+                                    #formatPercentage(c("prop_hq_variants", "ultra_rare.perc_n", "rare.perc_n", "low_freq.perc_n", "common.perc_n"),
+                                    #                 digits = 2) %>%
+                                    ### set custom format for selected columns
+                                    formatStyle(columns = c('ultra_rare.mean_r2', 'rare.mean_r2', 'low_freq.mean_r2', 'common.mean_r2'),
+                                              backgroundColor = styleInterval(c(0.6, 0.8), c('darkred', 'orange', 'darkgreen')),
+                                              color = c("white")) %>%
+                                    formatStyle(columns = c(7, 9, 11, 13), `border-right` = "solid 4px"))
+      
+    
+    html_list <- append(html_list, styled_pgs_table)
+  
+  }
+  
+}
+
+
 
 
 ### remove temporary objects, which are no longer required (lines + objects whose names end with "temp")

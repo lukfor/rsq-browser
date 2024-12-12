@@ -167,15 +167,11 @@ get_pgs_statistics <- function(input_df, pgs_id, nr_var_total, nr_indels, nr_SNV
     nr_hq_matches <- nrow(ref_data_subset[ref_data_subset$r2 >= 0.8, ])
     
     ### collect information for one specific combi in a dataframe
-    #stats_temp <- as.data.frame(pgs_id)
-    #stats_temp <- factor(stats_temp$pgs_id)
     stats_temp <- as.data.frame(genotyping_array)
     stats_temp$genotyping_array <- factor(stats_temp$genotyping_array)
-    #stats_temp$genotyping_array <- factor(genotyping_array)
     stats_temp$ref_panel <- factor(ref_panel_name)
     stats_temp$PGS <- pgs_id
     stats_temp$nr_var_total <- nr_var_total
-    stats_temp$nr_indels <- nr_indels
     stats_temp$nr_indels <- nr_indels
     stats_temp$nr_SNVs <- nr_SNVs
     stats_temp$nr_matches <- nr_matches
@@ -193,15 +189,15 @@ get_pgs_statistics <- function(input_df, pgs_id, nr_var_total, nr_indels, nr_SNV
     stats <- rbind(stats, stats_temp)
   }
   
-  ### sort desc 1.) by nr_variants and 2.) by prop_hq_variants
   stats <- stats %>%
-    arrange(desc(nr_matches), desc(nr_hq_matches))
+    ### sort desc 1.) by nr_variants and 2.) by prop_hq_variants
+    arrange(desc(nr_matches), desc(nr_hq_matches)) %>%
+    ### set PGS ID as the first column
+    relocate(PGS, .before = genotyping_array)
   
   return(stats)
   
 }
-
-
 
 
 
@@ -305,8 +301,6 @@ for (i in 1:length(pop_tabix_files)) {
 
 }
 
-
-#not_included <- pgs_breast_cancer[!pgs_breast_cancer$hm_pos %in% r2_ref_PGS_df$POS]
 
 
 
