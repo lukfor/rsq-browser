@@ -1,14 +1,8 @@
 {{ title = "Report" }}
-{{include "../layouts/header.view.html"}}
+{{include "../layouts/header-frame.view.html"}}
 
-<div id="page-content">
-
-  <h2>Loading report...</h2>
-
-  <script>
-    window.location.href = window.location.href + "/report.html";
-  </script>
-
+  <iframe src="/reports/{{report.getId()}}/report.html" style="width: 100%; height: 100%; border: none;"></iframe>
 </div>
-
-{{include "../layouts/footer.view.html"}}
+<script>
+  {{include "recentUploads.js"}}
+</script>
