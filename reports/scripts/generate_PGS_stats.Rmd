@@ -76,6 +76,11 @@ get_pgs_r2_data <- function(pgs_df, tbx_obj, tbx_obj_col_names) {
       ## pass colnames
       colnames(data_temp) <- tbx_obj_col_names
       
+      ## CAVE: one small error in row 5809321 (not counting the header row) -> "0.65.343" in column "IO_1kg" in the biome.bi.snv.tab.gz
+      ## remedy by setting this column as.numeric -> erroneous value will be replaced with NA (will cause a warning if this SNP is in the PGS)
+      data_temp <- data_temp %>%
+        mutate(IO_1kg = as.numeric(IO_1kg))
+      
       ### perform allele check - allele combi must match
       
       ## iterate over data_temp (necessary for multiallelic variants!)
@@ -124,7 +129,7 @@ get_pgs_statistics <- function(input_df, pgs_id, nr_var_total, nr_indels, nr_SNV
   ## get mean r2 and count (n) for each bin and for each array/ref-panel combination
   mean_r2_per_bin <- data_pivoted_binned_temp %>%
     group_by(bin, identifier) %>%
-    summarize(mean_r2 = round(mean(r2),3))
+    summarize(mean_r2 = mean(r2)) ## do not round here -> store exact values and round later before plotting
   
   count_per_bin <- data_pivoted_binned_temp %>%
     group_by(bin, identifier) %>%
@@ -232,6 +237,10 @@ pop_tabix_files <- list.files(params$r2_ref_data_folder, pattern = "bi.snv.tab.g
 ### get corresponding list of filenames
 pop_filenames <- list.files(params$r2_ref_data_folder, pattern = "bi.snv.tab.gz$")
 
+
+i_track_progress <- 0
+n <- length(pop_tabix_files) * length(PGS_files)
+
 ### iterate over the 4 different population-segragated reference files and generate PGS statistics for each (saved in separate .csv files)
 for (i in 1:length(pop_tabix_files)) {
   
@@ -250,10 +259,15 @@ for (i in 1:length(pop_tabix_files)) {
   ## Extract column names from first line
   col_names <- strsplit(header, "\t")[[1]]
   
+  
   ## initiate dataframe where results will be collected
   PGS_stats_df <- data.frame()
   
   for (i in 1:length(PGS_files)) {
+    
+    i_track_progress <- i_track_progress + 1
+    
+    print(paste(i_track_progress, "/", n, sep = ""))
     
     ## load file
     pgs_temp <- fread(PGS_files[i])
