@@ -42,6 +42,18 @@ pass_MAF_bin_data <- function(bin_name, target_col_name, stats_df, ref_df, conte
   return(stats_df)
 }
 
+valid_chr <- c(1:22)
+
+# chr <- 7
+# bp <- 558
+# 
+# 
+# if(!chr %in% valid_chr | is.na(bp)) {
+#       print("invalid")
+#     } else {
+#       print("valid")
+#     }
+
 
 ### function to get r2 data for PGS variants + indel count
 get_pgs_r2_data <- function(pgs_df, tbx_obj, tbx_obj_col_names) {
@@ -49,56 +61,65 @@ get_pgs_r2_data <- function(pgs_df, tbx_obj, tbx_obj_col_names) {
   ### initalize r2_PGS_df and indel count
   r2_ref_PGS_df <- data.frame()
   nr_indels <- 0
+  nr_invalid <- 0
   
   for (i in 1:nrow(pgs_df)) {
     chr <- pgs_df[i, hm_chr] ## NOTE: regardless of genome build, chr is always provided as integer by the PGSCatalog
-    chr <- paste("chr", chr, sep = "") ## bring chr into right format for r2 reference file
     bp <- pgs_df[i, hm_pos] ## NOTE: only use hm_pos, never chr_position (which might be on hg19)
-    a1_pgs <- pgs_df[i, effect_allele] ## extract A1 for allele control
-    a2_pgs <- pgs_df[i, other_allele] ## extract A2 for allele control
     
-    ### check if variant is an indel
-    if (nchar(a1_pgs) > 1 | nchar(a2_pgs) > 1) {
-      nr_indels <- nr_indels + 1 ## if it is an indel increase nr_indels by 1
-    }
+    ## if chr or bp is not valid increase invalid variant count by 1
+    if(!chr %in% valid_chr | is.na(bp)) {
+      nr_invalid <- nr_invalid + 1
+    } else {
+      chr <- paste("chr", chr, sep = "") ## bring chr into right format for r2 reference file
+      
+      a1_pgs <- pgs_df[i, effect_allele] ## extract A1 for allele control
+      a2_pgs <- pgs_df[i, other_allele] ## extract A2 for allele control
+      
+      ### check if variant is an indel
+      if (nchar(a1_pgs) > 1 | nchar(a2_pgs) > 1) {
+        nr_indels <- nr_indels + 1 ## if it is an indel increase nr_indels by 1
+      }
+      
+      ## Define genomnic regions of interest
+      region_temp <- GRanges(seqnames = chr, ranges = IRanges(start = bp, end = bp))
+      ## Extract data from the specified regions
+      result_temp <- scanTabix(tbx_obj, param = region_temp)
+      ## Parse the extracted lines into a data frame
+      lines <- unlist(result_temp)
+      data_temp <- fread(text = lines, header = F, sep = "\t")
+      
+      ## check if dataframe is NOT empty (e.g. allele check only possible when something was found)
+      if (nrow(data_temp) != 0) {
+        
+        ## pass colnames
+        colnames(data_temp) <- tbx_obj_col_names
+        
+        ## CAVE: one small error in row 5809321 (not counting the header row) -> "0.65.343" in column "IO_1kg" in the biome.bi.snv.tab.gz
+        ## remedy by setting this column as.numeric -> erroneous value will be replaced with NA (will cause a warning if this SNP is in the PGS)
+        data_temp <- data_temp %>%
+          mutate(IO_1kg = as.numeric(IO_1kg))
+        
+        ### perform allele check - allele combi must match
+        
+        ## iterate over data_temp (necessary for multiallelic variants!)
+        for (j in 1:nrow(data_temp)) {
+          ## ALT allele of r2 ref file must match either to A1 or A2 in PGS ref file
+          a1_match <- data_temp[j, ALT] == a1_pgs | data_temp[j, ALT] == a2_pgs
+          ## REF allele of r2 ref file must match either to A1 or A2 in PGs ref file
+          a2_match <- data_temp[j, REF] == a1_pgs | data_temp[j, REF] == a2_pgs
     
-    ## Define genomnic regions of interest
-    region_temp <- GRanges(seqnames = chr, ranges = IRanges(start = bp, end = bp))
-    ## Extract data from the specified regions
-    result_temp <- scanTabix(tbx_obj, param = region_temp)
-    ## Parse the extracted lines into a data frame
-    lines <- unlist(result_temp)
-    data_temp <- fread(text = lines, header = F, sep = "\t")
-    
-    ## check if dataframe is NOT empty (e.g. allele check only possible when something was found)
-    if (nrow(data_temp) != 0) {
-      
-      ## pass colnames
-      colnames(data_temp) <- tbx_obj_col_names
-      
-      ## CAVE: one small error in row 5809321 (not counting the header row) -> "0.65.343" in column "IO_1kg" in the biome.bi.snv.tab.gz
-      ## remedy by setting this column as.numeric -> erroneous value will be replaced with NA (will cause a warning if this SNP is in the PGS)
-      data_temp <- data_temp %>%
-        mutate(IO_1kg = as.numeric(IO_1kg))
-      
-      ### perform allele check - allele combi must match
-      
-      ## iterate over data_temp (necessary for multiallelic variants!)
-      for (j in 1:nrow(data_temp)) {
-        ## ALT allele of r2 ref file must match either to A1 or A2 in PGS ref file
-        a1_match <- data_temp[j, ALT] == a1_pgs | data_temp[j, ALT] == a2_pgs
-        ## REF allele of r2 ref file must match either to A1 or A2 in PGs ref file
-        a2_match <- data_temp[j, REF] == a1_pgs | data_temp[j, REF] == a2_pgs
-  
-        ## append result to collection df IF allele check passes
-        if (a1_match == TRUE & a2_match == TRUE) {
-          r2_ref_PGS_df <- rbind(r2_ref_PGS_df, data_temp[j, ])
+          ## append result to collection df IF allele check passes
+          if (a1_match == TRUE & a2_match == TRUE) {
+            r2_ref_PGS_df <- rbind(r2_ref_PGS_df, data_temp[j, ])
+          }
         }
       }
+    
     }
   }
   
-  res_list <- list("nr_indels" = nr_indels, "pgs_r2_df" = r2_ref_PGS_df)
+  res_list <- list("nr_indels" = nr_indels, "pgs_r2_df" = r2_ref_PGS_df, "nr_invalid" = nr_invalid)
   
 }
 
@@ -106,7 +127,7 @@ get_pgs_r2_data <- function(pgs_df, tbx_obj, tbx_obj_col_names) {
 
 
 ### function to get pgs_statistics from pgs_r2_df
-get_pgs_statistics <- function(input_df, pgs_id, nr_var_total, nr_indels, nr_SNVs) {
+get_pgs_statistics <- function(input_df, pgs_id, nr_var_total, nr_indels, nr_SNVs, nr_invalid) {
   
   ## prepare data for statistics where bins do NOT matter
   data_pivoted_temp <- input_df %>%
@@ -178,6 +199,7 @@ get_pgs_statistics <- function(input_df, pgs_id, nr_var_total, nr_indels, nr_SNV
     stats_temp$PGS <- pgs_id
     stats_temp$nr_var_total <- nr_var_total
     stats_temp$nr_indels <- nr_indels
+    stats_temp$nr_invalid <- nr_invalid
     stats_temp$nr_SNVs <- nr_SNVs
     stats_temp$nr_matches <- nr_matches
     stats_temp$nr_hq_matches <- nr_hq_matches
@@ -281,14 +303,21 @@ for (i in 1:length(pop_tabix_files)) {
     #print(pgs_n_vars_temp)
     
     ## get r2 data + nr. of indels
-    r2_data_and_indel_count_temp <- get_pgs_r2_data(pgs_temp, tbx, col_names)
+    r2_data_and_indel_invalid_count_temp <- get_pgs_r2_data(pgs_temp, tbx, col_names)
     
-    r2_data_temp <- r2_data_and_indel_count_temp$pgs_r2_df
+    r2_data_temp <- r2_data_and_indel_invalid_count_temp$pgs_r2_df
     
-    pgs_n_indels_temp <- r2_data_and_indel_count_temp$nr_indels
+    ### if dataframe is empty -> skip -> no reasonable statistics can be collected -> so PGS not included
+    if(length(r2_data_temp) == 0) {
+      next
+    }
     
-    ## the number of single nucleotide variants (SNVs) (regardless if they are biallelic or multi-allelic) = total_variants - indel_variants
-    pgs_n_snvs_temp <- pgs_n_vars_temp - pgs_n_indels_temp
+    pgs_n_indels_temp <- r2_data_and_indel_invalid_count_temp$nr_indels
+    
+    pgs_n_invalid_temp <- r2_data_and_indel_invalid_count_temp$nr_invalid
+    
+    ## the number of single nucleotide variants (SNVs) (regardless if they are biallelic or multi-allelic) = total_variants - indels - invalids
+    pgs_n_snvs_temp <- pgs_n_vars_temp - pgs_n_indels_temp - pgs_n_invalid_temp
     
     ## create MAF column
     r2_data_temp$MAF <- ifelse(r2_data_temp$AF <= 0.5, r2_data_temp$AF, 1-r2_data_temp$AF)
@@ -300,7 +329,7 @@ for (i in 1:length(pop_tabix_files)) {
     
     ## get target dataframe with the r2 statistics for the PGS
     r2_stats_temp <- get_pgs_statistics(r2_data_temp, pgs_id = pgs_name_temp, nr_var_total = pgs_n_vars_temp, 
-                                        nr_indels = pgs_n_indels_temp, nr_SNVs = pgs_n_snvs_temp)
+                                        nr_indels = pgs_n_indels_temp, nr_SNVs = pgs_n_snvs_temp, nr_invalid = pgs_n_invalid_temp)
     
     PGS_stats_df <- rbind(PGS_stats_df, r2_stats_temp)
     
