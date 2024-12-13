@@ -9,10 +9,7 @@ import genepi.r2browser.web.handlers.downloads.DownloadListHandler;
 import genepi.r2browser.web.handlers.downloads.FileDetailsHandler;
 import genepi.r2browser.web.handlers.queries.QueriesCreateHandler;
 import genepi.r2browser.web.handlers.queries.QueriesShowHandler;
-import genepi.r2browser.web.handlers.reports.ReportCreateHandler;
-import genepi.r2browser.web.handlers.reports.ReportDownloadHandler;
-import genepi.r2browser.web.handlers.reports.ReportLogsHandler;
-import genepi.r2browser.web.handlers.reports.ReportShowHandler;
+import genepi.r2browser.web.handlers.reports.*;
 import genepi.r2browser.web.util.AbstractErrorHandler;
 import genepi.r2browser.web.util.AbstractWebApp;
 
@@ -32,6 +29,7 @@ public class WebApp extends AbstractWebApp {
 		route("reports_show", new ReportShowHandler());
 		route("reports_logs", new ReportLogsHandler());
 		route("reports_download", new ReportDownloadHandler());
+		route("reports_download_zip", new ReportZipDownloadHandler());
 		route("download_list", new DownloadListHandler());
 		route("download_details", new DownloadDetailsHandler());
 		route("file_details", new FileDetailsHandler());

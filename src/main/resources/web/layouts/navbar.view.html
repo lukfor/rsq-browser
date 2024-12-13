@@ -69,8 +69,8 @@
         recentUploads.forEach((upload) => {
           const item = $('<a>', {
             class: 'dropdown-item',
-            href: `/reports/${upload}`, // Adjust the href as necessary for your app
-            text: `Report ${upload}`
+            href: `{{baseUrl}}/reports/${upload}`, // Adjust the href as necessary for your app
+            html: `<i class="far fa-file"></i> Report ${upload}`
           });
           recentUploadsMenu.prepend(item);
         });

@@ -1,8 +1,78 @@
 {{ title = "Report" }}
 {{include "../layouts/header-frame.view.html"}}
 
-  <iframe src="/reports/{{report.getId()}}/report.html" style="width: 100%; height: 100%; border: none;"></iframe>
+<div style="margin-top: 56px; padding: 10px; margin-left: 30px; margin-right: 40px;>
+  <i class="far fa-file"></i> Report {{report.getId()}}
+  <small>
+    &nbsp;&nbsp;&nbsp;This link will expire on <b>{{report.expiresOn}}</b>
+  </small>
+  <div class="float-right">
+    <a href="{{baseUrl}}/reports/{{report.getId()}}/report.zip" class="btn btn-light btn-sm"><i class="fas fa-download"></i> Download</a>
+    &nbsp;&nbsp;
+    <a href="#" id="shareLink" class="btn btn-light btn-sm"><i class="fas fa-share-alt"></i> Share</a>
+  </div>
+</div>
+<div style="
+    position: absolute;
+    top: 106px;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    width: 100%;">
+  <iframe src="{{baseUrl}}/reports/{{report.getId()}}/report.html" style="width: 100%; height: 100%; border: none;"></iframe>
 </div>
 <script>
   {{include "recentUploads.js"}}
+</script>
+
+
+<script>
+  document.getElementById('shareLink').addEventListener('click', function (e) {
+    e.preventDefault(); // Prevent default link behavior
+
+    const currentUrl = window.location.href;
+
+    // Show Bootbox dialog
+    bootbox.dialog({
+      title: 'Share This Page',
+      message: `
+        <p class="small">This link that can be used to share your results with collaborators:</p>
+        <div class="input-group">
+          <input id="shareUrlInput" type="text" class="form-control form-control-sm" value="${currentUrl}" readonly>
+          <div class="input-group-append">
+            &nbsp;<button id="copyButton" class="btn btn-primary btn-sm"><i class="far fa-copy"></i> Copy</button>
+          </div>
+        </div>
+      `,
+      buttons: {
+        close: {
+          label: 'Close',
+          className: 'btn-secondary',
+        },
+      },
+      callback: function () {
+        // Clear any clipboard event listeners after the dialog is closed
+        $('#copyButton').off('click');
+      },
+    });
+
+    // Attach copy-to-clipboard functionality after dialog is created
+    $(document).on('click', '#copyButton', function () {
+      const input = document.getElementById('shareUrlInput');
+      input.select(); // Select the URL
+      input.setSelectionRange(0, 99999); // For mobile devices
+
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          bootbox.alert('URL copied to clipboard!');
+        } else {
+          bootbox.alert('Failed to copy URL. Please try manually.');
+        }
+      } catch (err) {
+        console.error('Copy command failed:', err);
+        bootbox.alert('Your browser does not support copying to clipboard.');
+      }
+    });
+  });
 </script>

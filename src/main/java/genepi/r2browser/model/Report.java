@@ -6,6 +6,7 @@ import com.google.gson.JsonSyntaxException;
 import genepi.io.FileUtil;
 import genepi.r2browser.util.Quarto;
 import genepi.r2browser.util.GenomicRegion;
+import genepi.r2browser.web.util.HtmlToZip;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,6 +33,8 @@ public class Report implements Runnable {
 	private long executionTime;
 
 	private String output = null;
+
+	private String zip = null;
 
 	private String stdErr;
 
@@ -125,6 +128,14 @@ public class Report implements Runnable {
 		return output;
 	}
 
+	public void setZip(String zip) {
+		this.zip = zip;
+	}
+
+	public String getZip() {
+		return zip;
+	}
+
 	public void run() {
 
 		setStatus(QueryStatus.RUNNING);
@@ -203,6 +214,9 @@ public class Report implements Runnable {
 			if (success) {
 				setStatus(QueryStatus.SUCCEDED);
 				setOutput(FileUtil.path(_workspace, getId(), output));
+				String zipFilename =  getOutput() + ".zip";
+				HtmlToZip.createZipFromHtml(getOutput(), zipFilename);
+				setZip(zipFilename);
 			} else {
 				setStatus(QueryStatus.FAILED);
 				setError("Rendering report failed.");
