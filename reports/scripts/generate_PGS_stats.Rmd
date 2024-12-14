@@ -263,6 +263,8 @@ pop_filenames <- list.files(params$r2_ref_data_folder, pattern = "bi.snv.tab.gz$
 i_track_progress <- 0
 n <- length(pop_tabix_files) * length(PGS_files)
 
+pgs_cols_must_have <- c("hm_pos", "hm_chr", "other_allele", "effect_allele")
+
 ### iterate over the 4 different population-segragated reference files and generate PGS statistics for each (saved in separate .csv files)
 for (i in 1:length(pop_tabix_files)) {
   
@@ -293,6 +295,11 @@ for (i in 1:length(pop_tabix_files)) {
     
     ## load file
     pgs_temp <- fread(PGS_files[i])
+    
+    ## if PGS scoring file does not contain the required columns: hm_pos, hm_chr, other_allele, effect_allele -> skip this PGS (wrong format)
+    if(all(pgs_cols_must_have %in% colnames(pgs_temp)) == FALSE) {
+      next
+    }
     
     ## get PGS name for each PGS
     pgs_name_temp <- PGS_names[i]
