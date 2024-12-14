@@ -43,6 +43,11 @@
 			<directory>data</directory>
 		</fileSet>
 
+		<fileSet>
+			<outputDirectory>/reports</outputDirectory>
+			<directory>reports</directory>
+		</fileSet>
+
 	</fileSets>
 
 </assembly>
