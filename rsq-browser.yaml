@@ -1,7 +1,13 @@
-port: 7000
+port: 7050
 maxUploadSizeMb: 35
 caching: false
-baseUrl: /rsq-browser
+build: hg38
+dbSnpIndex: /Users/lukfor/Data/dbsnp/dbsnp150_hg38.txt.gz
+genes: "data/genes.GRCh38.sorted.bed"
+baseUrl: /lukas
+conda:
+  enabled: true
+  useMicromamba: true
 
 populations:
   - id: "afr"
