@@ -1,0 +1,56 @@
+{{ title = "Index" }}
+{{include "layouts/header.view.html"}}
+
+<div id="page-content">
+    <div class="container">
+
+        <h1>Quick Search</h1>
+
+		<p>If you already have your genotypes imputed or simply want a quick overview of the imputation quality for a specific region, SNP, or gene, you can use this quick search tool.</p>
+
+		<hr class="mt-5 mb-5">
+
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" id="region-tab" data-toggle="tab" href="#region" role="tab" aria-controls="home" aria-selected="true">Region ({{configuration.build}})</a>
+            </li>
+            {{if (configuration.getGenes() != null)}}
+            <li class="nav-item">
+              <a class="nav-link " id="gene-tabn" data-toggle="tab" href="#gene" role="tab" aria-controls="home" aria-selected="false">Gene</a>
+            </li>
+            {{end}}
+          </ul>
+          <br>
+			<div class="tab-content" id="myTabContent">
+			  <div class="tab-pane show active" id="region" role="tabpanel" aria-labelledby="region-tab">        
+        		 <form action="{{routeUrl("queries_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
+			        <div class="form-group">
+			          <input name="q" class="form-control" placeholder="chr1:2000000-5000000" autocomplete="off" value="chr1:10000000-11000000">
+			        </div>
+			        <div class="form-group">
+        			</div>
+        			<br>
+        			<button type="submit" id="submit" class="btn btn-primary btn-lg btn-upload">Search</button>
+        		 </form>
+			  </div>
+			   {{if (configuration.getGenes() != null)}}
+			  <div class="tab-pane" id="gene" role="tabpanel" aria-labelledby="gene-tab">        
+			     <form action="{{routeUrl("queries_create",{})}}" method="post" enctype="multipart/form-data" onSubmit="waitDialog()">
+			  
+			        <div class="form-group">
+			          <input name="q" class="form-control" placeholder="LPA" autocomplete="off" value="LPA">
+			        </div>
+				  <div class="form-group">
+	      		  </div>
+	        	  <br>
+	        		<button type="submit" id="submit" class="btn btn-primary btn-lg btn-upload">Search</button>
+	        	</form>
+			  </div>
+			       {{end}}			  
+        	</div>
+
+    </div>
+  </div>
+
+
+{{include "layouts/footer.view.html"}}

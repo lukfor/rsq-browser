@@ -1,9 +1,6 @@
 package genepi.r2browser.web;
 
-import genepi.r2browser.web.handlers.AboutPageHandler;
-import genepi.r2browser.web.handlers.WizardPageHandler;
-import genepi.r2browser.web.handlers.ErrorHandler;
-import genepi.r2browser.web.handlers.IndexPageHandler;
+import genepi.r2browser.web.handlers.*;
 import genepi.r2browser.web.handlers.downloads.DownloadDetailsHandler;
 import genepi.r2browser.web.handlers.downloads.DownloadListHandler;
 import genepi.r2browser.web.handlers.downloads.FileDetailsHandler;
@@ -22,6 +19,7 @@ public class WebApp extends AbstractWebApp {
 	protected void routes() {
 		route("index", new IndexPageHandler());
 		route("about", new AboutPageHandler());
+		route("search", new SearchPageHandler());
 		route("wizard", new WizardPageHandler());
 		route("queries_create", new QueriesCreateHandler());
 		route("queries_show", new QueriesShowHandler());
