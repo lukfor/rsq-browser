@@ -10,6 +10,9 @@ public class EscapeFunction implements Function<Object, String> {
 
 	@Override
 	public String apply(Object text) {
+		if (text == null) {
+			return null;
+		}
 		return StringEscapeUtils.escapeHtml4(text.toString()); 
 
 	}
