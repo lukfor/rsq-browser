@@ -32,8 +32,9 @@ public class ReportCreateHandler extends AbstractHandler {
 
 	public void handle(Context context) throws Exception {
 
-        Map<String, String> reportParams = convertMap(context.formParamMap());
-        Report report = submitReport(reportParams);
+        Map<String, String> form = convertMap(context.formParamMap());
+		//TODO: read template from url.
+        Report report = submitReport(WIZARD_REPORT, form);
 
 		HashMap<String, Object> params = new HashMap<String, Object>();
         params.put("report", report.getId());
@@ -53,7 +54,7 @@ public class ReportCreateHandler extends AbstractHandler {
 		return TYPE;
 	}
 
-	protected Report submitReport(Map<String, String> params) throws Exception {
+	protected Report submitReport(String template, Map<String, String> params) throws Exception {
 
 		String reportId = hash(RandomStringUtils.randomAlphanumeric(configuration.getJobIdLength()));
 
@@ -63,7 +64,7 @@ public class ReportCreateHandler extends AbstractHandler {
 
 			FileUtil.createDirectory(workspace);
 			report = Report.create(reportId, workspace);
-			report.setTemplate(WIZARD_REPORT);
+			report.setTemplate(template);
 			report.setParams(params);
 			jobQueue.submit(report);
 
