@@ -1,5 +1,6 @@
 population_file: {{ configuration.getFileByPopulation(form.population) }}
-genotyped: {{ form.genotyped }}
+genotyped: {{ form.genotyped == "yes" ? true : false}}
+chip: {{ form.chip }}
 population: {{ form.population }}
 
 genes:
