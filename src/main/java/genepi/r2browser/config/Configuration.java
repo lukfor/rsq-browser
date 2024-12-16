@@ -294,4 +294,15 @@ public class Configuration {
 
 	}
 
+	public String getFileByPopulation(String population) {
+		for (Dataset dataset: getDatasets()) {
+			for (SubDataset subset: dataset.getSubsets()) {
+				if (subset.getPopulation().equalsIgnoreCase(population)){
+					return new File(dataset.getFilename()).getAbsolutePath();
+				}
+			}
+		}
+		return null;
+	}
+
 }

@@ -7,7 +7,6 @@
 
 	<formats>
 		<format>zip</format>
-		<format>tar.gz</format>
 		<format>dir</format>
 	</formats>
 
@@ -18,11 +17,6 @@
 			<outputDirectory>/</outputDirectory>
 			<source>${project.build.directory}/${project.artifactId}.jar</source>
 			<destName>${project.artifactId}.jar</destName>
-		</file>
-		<file>
-			<outputDirectory>/</outputDirectory>
-			<source>${project.artifactId}.yaml</source>
-			<destName>${project.artifactId}.yaml</destName>
 		</file>
 		<file>
 			<outputDirectory>/</outputDirectory>
@@ -41,6 +35,11 @@
 		<fileSet>
 			<outputDirectory>/data</outputDirectory>
 			<directory>data</directory>
+		</fileSet>
+
+		<fileSet>
+			<outputDirectory>/reports</outputDirectory>
+			<directory>reports</directory>
 		</fileSet>
 
 	</fileSets>

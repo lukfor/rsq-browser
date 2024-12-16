@@ -1,0 +1,41 @@
+population_file: {{ configuration.getFileByPopulation(form.population) }}
+genotyped: {{ form.genotyped == "yes" ? true : false}}
+chip: {{ form.chip }}
+population: {{ form.population }}
+
+genes:
+  {{for gene in split_multiline(form.genes)}}
+  - {{gene}}
+  {{end}}
+
+genes_coordinates:
+  {{for gene in split_multiline(form.genes)}}
+  - {{genomic_region(gene)}}
+  {{end}}
+
+snps:
+  {{for snp in split_multiline(form.snps)}}
+  - {{snp}}
+  {{end}}
+
+snps_coordinates:
+  {{for snp in split_multiline(form.snps)}}
+  - {{genomic_region(snp)}}
+  {{end}}
+
+pgs:
+  {{for pgs in split_multiline(form.pgs)}}
+  - {{pgs}}
+  {{end}}
+
+chips:
+  value:
+    {{for chip in configuration.getChips()}}
+    {{chip.id}}: "{{chip.label}}"
+    {{end}}
+
+references:
+  value:
+    {{for reference in configuration.getReferences()}}
+    {{reference.id}}: "{{reference.label}}"
+    {{end}}

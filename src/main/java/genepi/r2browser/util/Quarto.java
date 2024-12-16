@@ -1,8 +1,13 @@
 package genepi.r2browser.util;
 
 import com.esotericsoftware.yamlbeans.YamlWriter;
+import com.esotericsoftware.yamlbeans.YamlConfig;
 import genepi.r2browser.App;
-import genepi.r2browser.util.CondaEnvManager;
+import genepi.r2browser.web.util.functions.GenomicRegionFunction;
+import genepi.r2browser.web.util.functions.SplitMultilineFunction;
+import io.marioslab.basis.template.Template;
+import io.marioslab.basis.template.TemplateContext;
+import io.marioslab.basis.template.TemplateLoader;
 
 import java.io.*;
 import java.nio.file.*;
@@ -12,12 +17,12 @@ public class Quarto {
 
     private Path qmdFilePath;
     private String output;
-    private Map<String, Object> params;
+    private Map<String, String> params;
     private Path workspacePath;
     private String binary = "";
 
 
-    public Quarto(Path qmdFilePath, Map<String, Object> params, String output, Path workspacePath) {
+    public Quarto(Path qmdFilePath, Map<String, String> params, String output, Path workspacePath) {
         binary = new BinaryFinder("quarto").env("QUARTO_HOME").envPath().path("/usr/local/bin").find();
         this.qmdFilePath = qmdFilePath;
         this.params = params;
@@ -27,12 +32,43 @@ public class Quarto {
 
     private Path writeParamsToTempYaml() throws IOException {
         // Create the params.yaml file in the workspace
-        Path paramsYamlPath = workspacePath.resolve("params.yaml");
+        Path paramsYamlPath = workspacePath.resolve("params.yml");
+        YamlConfig config = new YamlConfig();
+        config.writeConfig.setAlwaysWriteClassname(false);
+        config.writeConfig.setAutoAnchor(false);
+        config.writeConfig.setWriteRootElementTags(false);
+        config.writeConfig.setWriteRootTags(false);
+
 
         try (Writer writer = new FileWriter(paramsYamlPath.toFile())) {
-            YamlWriter yamlWriter = new YamlWriter(writer);
+            YamlWriter yamlWriter = new YamlWriter(writer, config);
+            yamlWriter.getConfig().writeConfig.setAlwaysWriteClassname(false);
+            yamlWriter.getConfig().writeConfig.setAutoAnchor(false);
+            yamlWriter.getConfig().writeConfig.setWriteRootElementTags(false);
+            yamlWriter.getConfig().writeConfig.setWriteRootTags(false);
+
             yamlWriter.write(params);
             yamlWriter.close();
+        }
+
+        return paramsYamlPath;
+    }
+
+    private Path writeParamsToTempYaml(Path templatePath) throws IOException {
+
+        TemplateLoader.FileTemplateLoader loader = new TemplateLoader.FileTemplateLoader();
+        TemplateContext templateContext = new TemplateContext();
+        templateContext.set("form", params);
+        templateContext.set("configuration", App.getDefault().getConfiguration());
+        templateContext.set("genomic_region", new GenomicRegionFunction());
+        templateContext.set("split_multiline", new SplitMultilineFunction());
+
+        Template template =  loader.load(templatePath.toAbsolutePath().toString());
+        String yaml = template.render(templateContext);
+
+        Path paramsYamlPath = workspacePath.resolve("params.yml");
+        try (Writer writer = new FileWriter(paramsYamlPath.toFile())) {
+            writer.write(yaml);
         }
 
         return paramsYamlPath;
@@ -61,8 +97,13 @@ public class Quarto {
         // Copy the folder to workspace
         copyFolderToWorkspace();
 
-        // Write the params.yaml file to the workspace
-        Path paramsYamlFile = writeParamsToTempYaml();
+        Path paramsYamlFile = null;
+        Path paramsTemplateYaml = workspacePath.resolve("params.template.yml");
+        if (paramsTemplateYaml.toFile().exists()) {
+            paramsYamlFile  = writeParamsToTempYaml(paramsTemplateYaml);
+        } else {
+            paramsYamlFile = writeParamsToTempYaml();
+        }
 
         // Find the index.qmd file in the copied folder
         Path indexQmdFile = workspacePath.resolve("index.qmd");

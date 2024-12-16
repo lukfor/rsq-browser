@@ -12,13 +12,13 @@
   <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link {{isRouteActive("index") ? "active":""}}" href="{{routeUrl("index",{})}}">
-          <i class="fas fa-search"></i> Search
+        <a class="nav-link {{isRouteActive("wizard") ? "active":""}}" href="{{routeUrl("wizard",{})}}">
+        <i class="fas fa-poll-h"></i> Start Wizard
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{isRouteActive("wizard") ? "active":""}}" href="{{routeUrl("wizard",{})}}">
-        <i class="fas fa-magic"></i> Wizard
+        <a class="nav-link {{isRouteActive("search") ? "active":""}}" href="{{routeUrl("search",{})}}">
+          <i class="fas fa-search"></i> Quick Search
         </a>
       </li>
       <li class="nav-item dropdown">
@@ -55,60 +55,5 @@
 
 
 <script>
-  function populateRecentUploads() {
-    const recentUploadsString = localStorage.getItem('recent_uploads');
-    const recentUploadsMenu = $('#recentUploadsMenu');
-
-    // Clear existing items except the static ones (divider and clear button)
-    recentUploadsMenu.children().not('.dropdown-divider, #clearHistoryButton').remove();
-
-    if (recentUploadsString) {
-      const recentUploads = JSON.parse(recentUploadsString);
-
-      if (recentUploads.length > 0) {
-        recentUploads.forEach((upload) => {
-          const item = $('<a>', {
-            class: 'dropdown-item',
-            href: `{{baseUrl}}/reports/${upload}`, // Adjust the href as necessary for your app
-            html: `<i class="far fa-file"></i> Report ${upload}`
-          });
-          recentUploadsMenu.prepend(item);
-        });
-      } else {
-        recentUploadsMenu.prepend('<span class="dropdown-item">No reports available</span>');
-      }
-    } else {
-      recentUploadsMenu.prepend('<span class="dropdown-item">No reports available</span>');
-    }
-  }
-
-  // Clear history function
-  function clearHistory() {
-    bootbox.confirm({
-      title: "Clear History",
-      message: "Are you sure you want to clear all history? This action cannot be undone.",
-      buttons: {
-        confirm: {
-          label: 'Yes',
-          className: 'btn-danger'
-        },
-        cancel: {
-          label: 'No',
-          className: 'btn-secondary'
-        }
-      },
-      callback: function (result) {
-        if (result) {
-          localStorage.removeItem('recent_uploads');
-          populateRecentUploads();
-        }
-      }
-    });
-  }
-
-  // Populate the dropdown dynamically when the user clicks on "History"
-  $('#historyDropdown').on('click', populateRecentUploads);
-
-  // Attach event listener to Clear History button
-  $('#recentUploadsMenu').on('click', '#clearHistoryButton', clearHistory);
+{{include "navbar.view.js"}}
 </script>
