@@ -20,11 +20,6 @@
 		</file>
 		<file>
 			<outputDirectory>/</outputDirectory>
-			<source>${project.artifactId}.yaml</source>
-			<destName>${project.artifactId}.yaml</destName>
-		</file>
-		<file>
-			<outputDirectory>/</outputDirectory>
 			<source>LICENSE</source>
 			<destName>LICENSE</destName>
 		</file>		
