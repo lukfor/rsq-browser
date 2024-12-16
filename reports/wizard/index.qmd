@@ -46,6 +46,12 @@ params:
       "1kg": "1000 Genomes"  
       "hrc": "HRC"  
       "top": "TOPMed"
+  populations:
+    value:
+      afr: "African"
+      eur: "European"
+      fin: "Finnish"
+      his/lat: "Hispanic/Latino"
 ---
 
 ```{r setup, include=FALSE}
@@ -523,7 +529,7 @@ if (length(params$genes_coordinates) != 0) {
     html_list_gene <- append(html_list_gene, header)
   
     ## get datatable with appropriate styling
-    styled_table <- list(datatable(gene_stats_temp, filter = "top", rownames = FALSE, 
+    styled_table <- list(datatable(gene_stats_temp, filter = "top", rownames = FALSE,
                                    # colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames -> not required with sketch!
                                    #              "Reference Panel" = "ref_panel",
                                    #              "n Variants" = "nr_variants",
@@ -531,6 +537,7 @@ if (length(params$genes_coordinates) != 0) {
                                    container = sketch_gene_table,
                                    escape = F,
                                    options = list(
+                                    dom = 'tip',
                                     pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
                                     lengthChange = F, ## remove "Show entries" dropdown
                                     paging = F ## disable pagination of Table (not required when all rows are shown)
@@ -567,7 +574,7 @@ html_list_snps <- list()
 ## if no SNPs are chosen by user we get an empty list for the snp parameter
 if (length(params$snps) != 0) {
   
-  snp_table_header <- list(tags$h2("Custom SNPs"))
+  snp_table_header <- list(tags$h3("Custom SNPs"))
   
   ## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
   html_list_snps <- append(html_list_snps, snp_table_header)
@@ -708,6 +715,7 @@ if (length(params$pgs) != 0) {
                                    container = sketch_pgs_table,
                                    escape = F,
                                    options = list(
+                                    dom = 'tip',
                                     pageLength = nrow(pgs_queried), ## show all rows (at most 12 combinations -> nicer if everything is shown directly)
                                     lengthChange = F, ## remove "Show entries" dropdown
                                     paging = F ## disable pagination of Table (not required when all rows are shown)
@@ -747,12 +755,19 @@ ranking <- scoring_data %>%
     summarize(total_score = sum(score, na.rm = T)) %>%
     arrange(desc(total_score))
 
-ranking_table <- list(datatable(ranking, filter = "top", rownames = FALSE, 
+### rowname corresponds to the rank after correct sorting
+ranking$rank <- rownames(ranking)
+
+ranking <- ranking %>%
+  relocate(rank, .before = genotyping_array)
+
+
+ranking_table <- list(datatable(ranking, rownames = FALSE, 
                                 class = 'display',  # Add a class to target CSS
                                 colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames
                                                   "Reference Panel" = "ref_panel",
                                                   "Total Performance Score" = "total_score"), 
-                                options = list(pageLength = nrow(pgs_queried), ## show all rows
+                                options = list(dom = 'tip', pageLength = nrow(pgs_queried), ## show all rows
                                     lengthChange = F, ## remove "Show entries" dropdown
                                     paging = F ## disable pagination of Table (not required when all rows are shown)
                                     #searching = FALSE ## remove search bar, BUT then the filter no longer works!
@@ -775,7 +790,8 @@ barplot1 <- ggplot(ranking, aes(x = genotyping_array, y = total_score, fill = re
   xlab("Genotyping Array")+
   ylab("Total Performance Score")+
   theme_minimal()+
-  guides(fill = guide_legend(title = "Reference Panel"))
+  guides(fill = guide_legend(title = "Reference Panel"))+
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))
 
 barplot1_plotly <- ggplotly(barplot1)
 
@@ -790,7 +806,8 @@ barplot2 <- ggplot(ranking, aes(x = ref_panel, y = total_score, fill = genotypin
   xlab("Reference Panel")+
   ylab("Total Performance Score")+
   theme_minimal()+
-  guides(fill = guide_legend(title = "Genotyping Array"))
+  guides(fill = guide_legend(title = "Genotyping Array"))+
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))
 
 barplot2_plotly <- ggplotly(barplot2)
 #barplot2_plotly <- ggplotly(barplot2) %>% layout(legendgroup = "group2", showlegend = T, legend = list(x = 0.95, y = 0.5))
@@ -825,30 +842,20 @@ barplot2_plotly <- ggplotly(barplot2)
 
 ### Input Metadata
 
-```{r pop_section, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, results='asis'}
 
 ### show selected chip IF a specific chip was selected
 if (params$genotyped == TRUE) {
   cat(paste('- Genotyping Array: ', chip_name, sep = ""))
 }
 
+pop <- params$populations[[params$population]]
 ```
-- Population: `r params$population`
+- Population: `r pop`
 
 
-### Genome-wide Imputation Quality
 
-```{r, out.width="60%", echo = FALSE, warning=FALSE, message=FALSE, results='asis'}
-
-lineplot
-
-
-```
-
-
-```{r, echo = FALSE, warning=FALSE, message=FALSE, results='asis'}
-
-#lineplot
+```{r, echo = FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=7.5, fig.width=7.5}
 
 tagList(html_list_overview)
 
@@ -858,6 +865,17 @@ barplot1
 barplot2
 
 ```
+
+## Genome-wide
+
+```{r, out.width="60%", echo = FALSE, warning=FALSE, message=FALSE, results='asis'}
+
+lineplot
+
+
+```
+
+
 
 
 ## Genes (`r length(params$genes)`)

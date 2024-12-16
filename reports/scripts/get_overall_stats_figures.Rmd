@@ -145,12 +145,6 @@ for (i in 1:length(pop_files)) {
 
 
 
-#### Open questions for this plot #######
-
-### how to add interactivity -> reference panel, genotyping array + download?
-### how to include variant number (required?)
-### how to map correct label (e.g. Core (1000 Genomes) [xxx variants])
-
 
 
 
