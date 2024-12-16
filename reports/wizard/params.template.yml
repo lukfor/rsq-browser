@@ -29,13 +29,16 @@ pgs:
   {{end}}
 
 chips:
-  value:
-    {{for chip in configuration.getChips()}}
-    {{chip.id}}: "{{chip.label}}"
-    {{end}}
+  {{for chip in configuration.getChips()}}
+  {{chip.id}}: "{{chip.label}}"
+  {{end}}
 
 references:
-  value:
-    {{for reference in configuration.getReferences()}}
-    {{reference.id}}: "{{reference.label}}"
-    {{end}}
+  {{for reference in configuration.getReferences()}}
+  {{reference.id}}: "{{reference.label}}"
+  {{end}}
+
+populations:
+  {{for population in configuration.getPopulations()}}
+  {{population.id}}: "{{population.label}}"
+  {{end}}
