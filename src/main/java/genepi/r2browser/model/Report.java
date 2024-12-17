@@ -6,6 +6,7 @@ import com.google.gson.JsonSyntaxException;
 import genepi.io.FileUtil;
 import genepi.r2browser.util.Quarto;
 import genepi.r2browser.util.GenomicRegion;
+import genepi.r2browser.web.util.HtmlToZip;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,13 +16,11 @@ import java.util.*;
 
 public class Report implements Runnable {
 
-	public static final String WIZARD_REPORT = "reports/wizard";
-
 	private String id;
 
-	private String rmd;
+	private String template;
 
-	private Map<String, Object> params;
+	private Map<String, String> params;
 
 	private Date submittedOn;
 
@@ -32,6 +31,8 @@ public class Report implements Runnable {
 	private long executionTime;
 
 	private String output = null;
+
+	private String zip = null;
 
 	private String stdErr;
 
@@ -53,20 +54,20 @@ public class Report implements Runnable {
 		this.id = id;
 	}
 
-	public void setParams(Map<String, Object> params) {
+	public void setParams(Map<String, String> params) {
 		this.params = params;
 	}
 
-	public Map<String, Object> getParams() {
+	public Map<String, String> getParams() {
 		return params;
 	}
 
-	public void setRmd(String rmd) {
-		this.rmd = rmd;
+	public void setTemplate(String template) {
+		this.template = template;
 	}
 
-	public String getRmd() {
-		return rmd;
+	public String getTemplate() {
+		return template;
 	}
 
 	public Date getSubmittedOn() {
@@ -125,6 +126,14 @@ public class Report implements Runnable {
 		return output;
 	}
 
+	public void setZip(String zip) {
+		this.zip = zip;
+	}
+
+	public String getZip() {
+		return zip;
+	}
+
 	public void run() {
 
 		setStatus(QueryStatus.RUNNING);
@@ -135,58 +144,8 @@ public class Report implements Runnable {
 
 			long start = System.currentTimeMillis();
 
-			Path report = new File(WIZARD_REPORT).getAbsoluteFile().toPath();
+			Path report = new File(template).getAbsoluteFile().toPath();
 			Path workspaceDir = new File(_workspace, getId()).getAbsoluteFile().toPath();
-
-			//RMarkdownScript rMarkdownScript = new RMarkdownScript(report, params, output);
-			//rMarkdownScript.run();
-
-			List<String> genesCoordinates = new ArrayList<>();
-			if (params.containsKey("genes")) {
-				Object genes = params.get("genes");
-				if (genes instanceof  String) {
-					GenomicRegion region = GenomicRegion.parse(genes.toString(), "hg38");
-					genesCoordinates.add(region.toString());
-					List<String> list = new ArrayList<>();
-					list.add(genes.toString());
-					params.put("genes", list);
-				}
-				if (genes instanceof  List) {
-					for (Object gene: (List) genes) {
-						GenomicRegion region = GenomicRegion.parse(gene.toString(), "hg38");
-						genesCoordinates.add(region.toString());
-					}
-				}
-			}
-			params.put("genes_coordinates", genesCoordinates);
-
-			List<String> snpsCoordinates = new ArrayList<>();
-			if (params.containsKey("snps")) {
-				Object snps = params.get("snps");
-				if (snps instanceof  String) {
-					GenomicRegion region = GenomicRegion.parse(snps.toString(), "hg38");
-					snpsCoordinates.add(region.toString());
-					List<String> list = new ArrayList<>();
-					list.add(snps.toString());
-					params.put("snps", list);
-				}
-				if (snps instanceof  List) {
-					for (Object snp: (List) snps) {
-						GenomicRegion region = GenomicRegion.parse(snp.toString(), "hg38");
-						snpsCoordinates.add(region.toString());
-					}
-				}
-			}
-			params.put("snps_coordinates", snpsCoordinates);
-
-			if (params.containsKey("pgs")) {
-				Object pgs = params.get("pgs");
-				if (pgs instanceof  String) {
-					List<String> list = new ArrayList<>();
-					list.add(pgs.toString());
-					params.put("pgs", list);
-				}
-			}
 
 			Path stdoutFile = workspaceDir.resolve("command.out");
 			Path stderrFile = workspaceDir.resolve("command.err");
@@ -203,6 +162,9 @@ public class Report implements Runnable {
 			if (success) {
 				setStatus(QueryStatus.SUCCEDED);
 				setOutput(FileUtil.path(_workspace, getId(), output));
+				String zipFilename =  getOutput() + ".zip";
+				HtmlToZip.createZipFromHtml(getOutput(), zipFilename);
+				setZip(zipFilename);
 			} else {
 				setStatus(QueryStatus.FAILED);
 				setError("Rendering report failed.");
@@ -225,7 +187,7 @@ public class Report implements Runnable {
 		FileUtil.writeStringBufferToFile(jobFilename, new StringBuffer(gson.toJson(query)));
 	}
 
-	public synchronized static Report create(String id, String workspace, List<Dataset> datasets) {
+	public synchronized static Report create(String id, String workspace) {
 		Report report = new Report();
 		report.setId(id);
 		report.setStatus(QueryStatus.SUBMITTED);

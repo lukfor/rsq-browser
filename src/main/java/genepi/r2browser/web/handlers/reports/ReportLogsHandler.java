@@ -33,6 +33,8 @@ public class ReportLogsHandler extends AbstractHandler {
 			page.put("report", report);
 			page.put("stdout", FileUtil.readFileAsString(report.getStdOut()));
 			page.put("stderr", FileUtil.readFileAsString(report.getStdErr()));
+			String params = FileUtil.path(configuration.getWorkspace(), report.getId(), "params.yml");
+			page.put("params", FileUtil.readFileAsString(params));
 			page.put("configuration", configuration);
 			page.put("downloads", configuration.getDownloads());
 			page.render();

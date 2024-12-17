@@ -1,0 +1,86 @@
+---
+title: "Comparison of Genotpying Arrays"
+author: "Florian Schnitzer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r main_code, include=FALSE}
+### load libraries
+library(data.table)
+library(dplyr)
+library(tidyr)
+
+
+### load chip data
+GSA_strand_data <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/chips_rayner/GSA-24v3-0_A2-b37.strand",
+                     header = F)
+
+strand_col_names <- c("ID", "chr", "bp", "perc_match_genome", "strand", "TOP_alleles")
+
+colnames(GSA_strand_data) <- strand_col_names
+
+HC_strand_data <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/chips_rayner/humancore-12v1-0_a-b37.strand",
+                     header = F)
+
+colnames(HC_strand_data) <- strand_col_names
+
+
+## get overlap with ID
+overlap_strand_data <- intersect(GSA_strand_data$ID, HC_strand_data$ID)
+length(overlap_strand_data) ## 102651
+
+## compare to using chr:bp
+GSA_strand_data <- GSA_strand_data %>%
+  mutate(ID_2 = paste(chr, bp, sep = ":"))
+
+HC_strand_data <- HC_strand_data %>%
+  mutate(ID_2 = paste(chr, bp, sep = ":"))
+
+overlap_strand_data_2 <- intersect(GSA_strand_data$ID_2, HC_strand_data$ID_2)
+length(overlap_strand_data_2) ## 133562 -> higher!! (but allele information never included, sometimes with ID)
+
+
+
+
+### using Ref/Alt files instead
+GSA_ref_alt <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/chips_rayner/GSA-24v1-0_A2.b37.RefAlt", header = F)
+
+ref_alt_col_names <- c("ID", "A2")
+
+colnames(GSA_ref_alt) <- ref_alt_col_names
+
+HC_ref_alt <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/chips_rayner/humancore-12v1-0_a-b37.strand.RefAlt",
+                    header = F)
+
+colnames(HC_ref_alt) <- ref_alt_col_names
+
+## get overlap with ID
+overlap_ref_alt_data <- intersect(GSA_ref_alt$ID, HC_ref_alt$ID)
+length(overlap_ref_alt_data) ## 102623
+
+
+
+#### How to generate heatmap - What logic for calculation?
+
+
+
+```
+
+
+
+```{r plot, echo=FALSE}
+
+
+
+
+
+```
+
+

@@ -40,6 +40,6 @@ hs_err_pid*
 /reports/wizard/index.html
 /reports/wizard/testing_files/
 /reports/wizard/testing*
-/reports/wizard/colnames.txt
+/reports/wizard/index_LF.qmd
 /data/
 /cache/

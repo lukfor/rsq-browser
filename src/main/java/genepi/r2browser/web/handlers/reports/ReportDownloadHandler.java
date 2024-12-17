@@ -11,6 +11,7 @@ import io.javalin.http.HandlerType;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Date;
 
 public class ReportDownloadHandler extends AbstractHandler {
 
@@ -29,6 +30,11 @@ public class ReportDownloadHandler extends AbstractHandler {
 		Report report = Report.findById(id, workspace);
 
 		if (report != null) {
+
+			Date now = new Date();
+			if (now.after(report.getExpiresOn())) {
+				throw new Exception("Report expired.");
+			}
 
 			if (report.getOutput() != null) {
 				context.contentType(ContentType.HTML);

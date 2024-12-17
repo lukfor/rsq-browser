@@ -4,7 +4,6 @@ import genepi.r2browser.App;
 import genepi.r2browser.config.Configuration;
 import genepi.r2browser.model.Report;
 import genepi.r2browser.web.util.AbstractHandler;
-import genepi.r2browser.web.util.Page;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
@@ -13,9 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
 
-public class ReportShowHandler extends AbstractHandler {
+public class ReportZipDownloadHandler extends AbstractHandler {
 
-	public static final String PATH = "/reports/{report}";
+	public static final String PATH = "/reports/{report}/report.zip";
 
 	public static final HandlerType TYPE = HandlerType.GET;
 
@@ -36,18 +35,15 @@ public class ReportShowHandler extends AbstractHandler {
 				throw new Exception("Report expired.");
 			}
 
-			String template = "web/reports/show." + report.getStatus().name().toLowerCase() + ".view.html";
+			if (report.getZip() != null) {
+				context.contentType(ContentType.APPLICATION_ZIP);
+				context.result(Files.newInputStream(Paths.get(report.getZip())));
+				return;
+			}
 
-			Page page = new Page(context, template);
-			page.put("report", report);
-			page.put("configuration", configuration);
-			page.put("downloads", configuration.getDownloads());
-			page.render();
-
-
-		} else {
-			throw new Exception("Report not found.");
 		}
+
+		throw new Exception("Report not found.");
 
 	}
 

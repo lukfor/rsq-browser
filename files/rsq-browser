@@ -1,4 +1,65 @@
 #!/bin/bash
 export JAVA_PROGRAM_ARGS=`echo "$@"`
 FILE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-java -Xmx10G -jar "$FILE_PATH/rsq-browser.jar" $JAVA_PROGRAM_ARGS
+
+download() {
+  if command -v curl > /dev/null 2>&1; then
+    curl -fsSL "$1"
+  else
+    wget -qO- "$1"
+  fi
+}
+
+update() {
+  APP_NAME=rsq-browser
+  GITHUB_ORG=lukfor
+  GITHUB_REPO=rsq-browser
+
+  if [ -n "$1" ]; then
+    VERSION="$1"
+  else
+    GITHUB_LATEST_RELEASE_URL=https://api.github.com/repos/${GITHUB_ORG}/${GITHUB_REPO}/releases/latest
+    VERSION_JSON="$(download ${GITHUB_LATEST_RELEASE_URL})"
+    VERSION="$(printf '%s' "${VERSION_JSON}" |  awk -F '"' '/tag_name/{print $4}')"
+    #remove v prefix
+    VERSION="${VERSION:1}"
+  fi
+
+  GITHUB_REPO_URL=https://github.com/${GITHUB_ORG}/${GITHUB_REPO}
+  GITHUB_RELEASE_URL=${GITHUB_REPO_URL}/releases/download/v${VERSION}/${APP_NAME}-${VERSION}-linux.tar.gz
+
+  # download and extract tar.gz file
+  echo "Downloading ${APP_NAME} ${VERSION} from ${GITHUB_RELEASE_URL}..."
+  download ${GITHUB_RELEASE_URL} | tar -xz
+
+  echo ""
+  echo "Done."
+}
+
+ENV_FILE="$FILE_PATH/rsq-browser.env"
+if [[ "$RSQB_ENV_FILE" ]]; then
+  ENV_FILE="$RSQB_ENV_FILE"
+fi
+
+if [ -f "$ENV_FILE" ]; then
+    source "$ENV_FILE"
+    echo "File '$ENV_FILE' exists and has been sourced."
+fi
+
+JAVA_ARGS="-Xmx10G"
+if [[ "$RSQB_JAVA_ARGS" ]]; then
+  JAVA_ARGS="$RSQB_JAVA_ARGS"
+fi
+
+JAVA_CMD="java"
+if [[ "$RSQB_JAVA_CMD" ]]; then
+  JAVA_CMD="$RSQB_JAVA_CMD"
+fi
+
+if [ "${JAVA_PROGRAM_ARGS}" = "update" ]; then
+  echo "Updating application..."
+  cd "${FILE_PATH}"
+  update
+else
+  exec ${JAVA_CMD} ${JAVA_ARGS} -jar "$FILE_PATH/rsq-browser.jar" $JAVA_PROGRAM_ARGS
+fi
