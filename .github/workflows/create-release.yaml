@@ -23,5 +23,5 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: "target/rsq-browser-*.zip"
+          artifacts: "target/rsq-browser-*.tar.gz"
           token: ${{ secrets.GITHUB_TOKEN }}
