@@ -37,11 +37,11 @@ get_overview_plot_df <- function(population_df) {
   
   ## create bins based on MAF (detailed -> better for plotting)
   population_df <- population_df %>%
-  select(-CHR, -POS, -REF, -ALT, -AF) %>%
-  mutate(bin_detailed = cut(MAF, breaks = c(0.0000, 0.0005, 0.001, 0.002, 0.005, 0.010, 0.015,
-                                     0.020, 0.035, 0.050, 0.100, 0.200, 0.300, 0.400, 0.500),
-                    labels = c(0.0005, 0.001, 0.002, 0.005, 0.01, 0.015, 0.02,
-                               0.035, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)))
+    select(-CHR, -POS, -REF, -ALT, -AF) %>%
+    mutate(bin_detailed = cut(MAF, breaks = c(0.0000, 0.0005, 0.001, 0.002, 0.005, 0.010, 0.015,
+                                       0.020, 0.035, 0.050, 0.100, 0.200, 0.300, 0.400, 0.500),
+                      labels = c(0.0005, 0.001, 0.002, 0.005, 0.01, 0.015, 0.02,
+                                 0.035, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)))
   
   ## create vector for array_ref_panel identifiers
   identifier_vec <- colnames(population_df)
@@ -88,6 +88,105 @@ get_overview_plot_df <- function(population_df) {
 }
 
 
+## function to collect metrics for performance evaluation table and barplots (weighting with 4 MAF bins)
+get_performance_df <- function(population_df) {
+  
+  ## create MAF column
+  population_df$MAF <- ifelse(population_df$AF <= 0.5, population_df$AF, 1-population_df$AF)
+  
+  population_df <- population_df %>%
+    select(-CHR, -POS, -REF, -ALT, -AF) %>%
+    mutate(bin = cut(MAF, breaks = c(0.000, 0.005, 0.010, 0.05, 0.500),
+                    labels = c("ultra_rare", "rare", "low_frequency", "common")))
+  
+  ## create vector for array_ref_panel identifiers
+  identifier_vec <- colnames(population_df)
+  identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("_in"))]
+  identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("bin"))]
+  identifier_vec <- identifier_vec[!str_detect(identifier_vec, pattern = c("MAF"))]
+  
+  ## initiate df
+  nr_var_df <- data.frame()
+  mean_r2_per_bin_df <- data.frame()
+  counts_per_bin_df <- data.frame()
+  
+  ## iterate over unique combis and collect data in the desired format for plotting
+  for (i in 1:length(identifier_vec)) {
+    
+    ## make identifier_vec elements accessible within dplyr functions
+    id_for_dplyr <- sym(identifier_vec[i])
+    
+    ## select only data from one combi and remove NAs
+    temp_stats <- population_df %>%
+      select(!! id_for_dplyr, bin) %>%
+      na.omit()
+    
+    ### nr. varaints for each unique combi
+    nr_var <- nrow(temp_stats)
+    
+    ## get proportion of high quality (r2 >= 0.8) variants
+    nr_hq_var <- temp_stats %>%
+      filter(!! id_for_dplyr >= 0.8) %>%
+      count()
+    
+    prop_hq_var <- nr_hq_var$n/nr_var
+    
+    nr_var_df_temp <- as.data.frame(nr_var)
+    nr_var_df_temp$prop_hq_var <- prop_hq_var
+    nr_var_df_temp$identifier <- identifier_vec[i]
+    
+    ## then group by bin and calculate the mean for this combi per bin, add identifier as additional column
+    mean_r2_per_bin_temp <- temp_stats %>%
+      group_by(bin) %>%
+      summarize(mean_r2 = mean(!! id_for_dplyr)) %>%
+      mutate(identifier = identifier_vec[i])
+    
+    
+    count_per_bin_temp <- temp_stats %>%
+      group_by(bin) %>%
+      count() %>%
+      mutate(identifier = identifier_vec[i]) 
+    
+    
+    ## append
+    nr_var_df <- rbind(nr_var_df, nr_var_df_temp)
+    mean_r2_per_bin_df <- rbind(mean_r2_per_bin_df, mean_r2_per_bin_temp)
+    counts_per_bin_df <- rbind(counts_per_bin_df, count_per_bin_temp)
+  }
+  
+  
+  # get into wide format
+  mean_r2_per_bin_df <- mean_r2_per_bin_df %>%
+    pivot_wider(names_from = "bin", values_from = "mean_r2") %>%
+    rename(ultra_rare.mean_r2 = ultra_rare, rare.mean_r2 = rare, low_frequency.mean_r2 = low_frequency, common.mean_r2 = common)
+
+  counts_per_bin_df <- counts_per_bin_df %>%
+    pivot_wider(names_from = "bin", values_from = "n") %>%
+    rename(ultra_rare.n = ultra_rare, rare.n = rare, low_frequency.n = low_frequency, common.n = common)
+
+  perform_stats_df <- merge(mean_r2_per_bin_df, counts_per_bin_df, by="identifier")
+  perform_stats_df <- merge(perform_stats_df, nr_var_df, by="identifier")
+
+  perform_stats_df <- perform_stats_df %>%
+    ## split identifier to get columns with array and ref_panel names
+    separate_wider_delim(cols = identifier, ## column to separate/split
+                 delim = "_", ## delimiter to separate/split on
+                 names = c("genotyping_array", "ref_panel"),  ## names of output columns from split results
+                 cols_remove = FALSE) ## explicitly keep the input column
+
+
+  return(perform_stats_df)
+
+}
+
+
+### testing
+
+#test_pop <- fread("//wsl.localhost/Ubuntu-22.04/home/flo/projects/rsq-browser/local_files/data_local/mlof.bi.snv.tab.gz")
+
+#test_out <- get_performance_df(test_pop)
+
+
 
 
 #### MAIN ######
@@ -112,16 +211,20 @@ for (i in 1:length(pop_files)) {
     mutate(IO_1kg = as.numeric(IO_1kg))
   
   plot_pop_dat <- get_overview_plot_df(pop_data)
+  stats_pop_dat <- get_performance_df(pop_data)
   
   ### important: add extension to pop_filename -> so that it can be accessed in index with population_file parameter but does NOT overwrite this file
   outfile_name <- paste(pop_filename, ".plot.csv", sep = "")
+  outfile_name2 <- paste(pop_filename, ".stats.csv", sep = "")
   
   outfile_path <- paste(params$output_path, outfile_name, sep = "")
-  
+  outfile_path2 <- paste(params$output_path, outfile_name2, sep = "")
   
   write.table(plot_pop_dat, file = outfile_path, quote = F, row.names = F, sep = "\t")
+  write.table(stats_pop_dat, file = outfile_path2, quote = F, row.names = F, sep = "\t")
   
 }
+
 
 
 

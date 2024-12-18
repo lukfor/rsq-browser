@@ -331,7 +331,7 @@ for (i in 1:length(pop_tabix_files)) {
     
     ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
     r2_data_temp <- r2_data_temp %>%
-      mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
+      mutate(bin = cut(MAF, breaks = c(0.000, 0.005, 0.010, 0.05, 0.500),
                       labels = c("ultra_rare", "rare", "low_frequency", "common")))
     
     ## get target dataframe with the r2 statistics for the PGS
