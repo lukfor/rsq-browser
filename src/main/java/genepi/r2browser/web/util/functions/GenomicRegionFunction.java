@@ -8,7 +8,7 @@ public class GenomicRegionFunction implements Function<Object, String> {
 	@Override
 	public String apply(Object text) {
 		String build = "hg38";
-		String defaultValue = "-";
+		String defaultValue = "unknown";
 		try{
 			GenomicRegion genomicRegion = GenomicRegion.parse(text.toString(), build);
 			return genomicRegion.toString();
