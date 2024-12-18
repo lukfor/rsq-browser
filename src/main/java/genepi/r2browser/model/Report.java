@@ -44,7 +44,7 @@ public class Report implements Runnable {
 
 	private transient String _workspace;
 
-	public static int EXPIRES_HOURS = 4;
+	public static int EXPIRES_HOURS = 48;
 
 	public String getId() {
 		return id;
