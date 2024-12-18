@@ -33,6 +33,8 @@ public class Configuration {
 
 	private int threads = 2;
 
+	private int cleanUpIntervallHours = 5;
+
 	private List<Dataset> datasets = new Vector<Dataset>();
 
 	private List<IdLabel> populations = new Vector<IdLabel>();
@@ -226,6 +228,14 @@ public class Configuration {
 
 	public void setFiles(List<AdditionalDownload> files) {
 		this.files = files;
+	}
+
+	public int getCleanUpIntervallHours() {
+		return cleanUpIntervallHours;
+	}
+
+	public void setCleanUpIntervallHours(int cleanUpIntervallHours) {
+		this.cleanUpIntervallHours = cleanUpIntervallHours;
 	}
 
 	protected void init() throws IOException {

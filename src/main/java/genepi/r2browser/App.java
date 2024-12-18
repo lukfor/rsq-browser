@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import genepi.io.FileUtil;
 import genepi.r2browser.commands.ServerCommand;
 import genepi.r2browser.config.Configuration;
+import genepi.r2browser.tasks.Scheduler;
 import genepi.r2browser.web.util.JobQueue;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -27,6 +28,8 @@ public class App implements Runnable {
 	private static App instance;
 
 	private Configuration configuration = new Configuration();
+
+	private Scheduler scheduler;
 
 	private String configFilename = null;
 
@@ -71,6 +74,10 @@ public class App implements Runnable {
 			configuration = Configuration.loadFromFile(configFile, parent);
 			jobQueue = new JobQueue(configuration.getThreads());
 
+			scheduler = new Scheduler();
+			scheduler.startScheduler(configuration.getCleanUpIntervallHours());
+
+
 			this.configFilename = configFilename;
 
 		} catch (IOException | URISyntaxException e) {
@@ -87,6 +94,10 @@ public class App implements Runnable {
 
 	public JobQueue getJobQueue() {
 		return jobQueue;
+	}
+
+	public Scheduler getScheduler() {
+		return scheduler;
 	}
 
 	public static void main(String[] args) throws URISyntaxException {
