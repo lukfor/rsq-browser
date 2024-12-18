@@ -302,26 +302,25 @@ scale_to_range <- function(x, low, high) {
 
 ###### MAIN ########
 
-## Create a list, where everything is collected, which should be displayed in the html report
-html_list_overview <- list()
 
-
-### load appropriate reference file for the selected population (user must select population)
+### load appropriate reference files for the selected population (user must select population)
 overview_fig_data <- fread(paste(params$population_file, ".plot.csv", sep = ""))
-
+overview_stats_data <- fread(paste(params$population_file, ".stats.csv", sep = ""))
 
 ### get named vector for mapping
 chip_vec <- unlist(params$chips)
 ref_vec <- unlist(params$references)
 
+
 ### if user selected one or more arrays (chip parameter) -> filter for these arrays
 if (params$genotyped == TRUE) {
   overview_fig_data <- overview_fig_data %>%
-    ## get array and ref_panel from identifier
-    #separate_wider_delim(cols = identifier, delim = "_", names = c("array", "ref_panel"), cols_remove = FALSE) %>%
     filter(genotyping_array == params$chip)
   
-  ### get actual full chip name for params$chip using vector created above (bc. for gene/SNP/PGS stats renaming of chips occurs BEFORE filtering)
+  overview_stats_data <- overview_stats_data %>%
+    filter(genotyping_array == params$chip)
+  
+  ### get actual full chip name from params$chip using vector created above (bc. for gene/SNP/PGS stats renaming of chips occurs BEFORE filtering)
   chip_name <- ifelse(params$chip %in% names(chip_vec), chip_vec[params$chip], params$chip)
 }
 
@@ -333,12 +332,7 @@ overview_fig_data <- overview_fig_data %>%
     mutate(id_new = paste(genotyping_array, ' (', ref_panel, ')', sep = ""))
 
 
-#overview_figure_header <- list(tags$h3("Genome-wide Imputation Quality"))
-  
-## append to the html_list (list of lists -> every sublist is markdown code, which should be displayed)
-#html_list_overview <- append(html_list_overview, overview_figure_header)
-
-### create overview plot - TODO: improve legend conent!
+### create overview plot
 lineplot <- ggplot(overview_fig_data, aes(x=bin_detailed, y=mean_r2, color = id_new)) +
   ### draw line plot
   geom_line()+
@@ -353,12 +347,78 @@ lineplot <- ggplot(overview_fig_data, aes(x=bin_detailed, y=mean_r2, color = id_
   theme_minimal()+
   theme(legend.title=element_blank())
 
-
 ### convert to plotly object
 #lineplot_plotly <- ggplotly(lineplot)
 
-## add to html list
-#html_list_overview <- append(html_list_overview, list(lineplot))
+### calculate genome-wide performance score
+overview_stats_data$score <- overview_stats_data$ultra_rare.mean_r2 * 5 +
+                          overview_stats_data$rare.mean_r2 * 3 +
+                          overview_stats_data$low_frequency.mean_r2 * 1.5 +
+                          overview_stats_data$common.mean_r2 * 1 +
+                          overview_stats_data$prop_hq_var * 1.5 +
+                          scale_to_range(overview_stats_data$nr_var, 0, 1) * 2.5
+
+### get nice name for legend
+overview_stats_data <- overview_stats_data %>%
+    mutate(genotyping_array = ifelse(genotyping_array %in% names(chip_vec), chip_vec[genotyping_array], genotyping_array)) %>%
+    mutate(ref_panel = ifelse(ref_panel %in% names(ref_vec), ref_vec[ref_panel], ref_panel)) %>%
+    mutate(id_new = paste(genotyping_array, ' (', ref_panel, ')', sep = ""))
+
+
+### illustrate genome-wide ranking
+ranking_gw <- overview_stats_data %>%
+  select(genotyping_array, ref_panel, score) %>%
+  arrange(desc(score))
+
+### rowname corresponds to the rank after correct sorting
+ranking_gw$rank <- rownames(ranking_gw)
+
+ranking_gw <- ranking_gw %>%
+  relocate(rank, .before = genotyping_array)
+
+
+ranking_table_gw <- list(datatable(ranking_gw, rownames = FALSE, 
+                                class = 'display',  # Add a class to target CSS
+                                colnames = c("Rank" = "rank", "Genotyping Array" = "genotyping_array", ### adjust colnames
+                                                  "Reference Panel" = "ref_panel",
+                                                  "Total Performance Score" = "score"), 
+                                options = list(dom = 'tip', pageLength = nrow(ranking_gw), ## show all rows
+                                    lengthChange = F, ## remove "Show entries" dropdown
+                                    paging = F ## disable pagination of Table (not required when all rows are shown)
+                                    )) %>%
+                                    formatRound(c('Total Performance Score'), digits = 3))
+
+html_list_ranking_gw <- list()
+
+header_ranking_gw <- list(tags$h3("Genome-wide Performance Evaluation"))
+
+html_list_ranking_gw <- append(html_list_ranking_gw, header_ranking_gw)
+
+
+html_list_ranking_gw <- append(html_list_ranking_gw, ranking_table_gw)
+
+### TODO - set fixed custom color scheme for genotyping array and reference panel (to always ensure the same color in all barplots), also ensure same order!
+
+barplot1_gw <- ggplot(ranking_gw, aes(x = factor(genotyping_array, levels = c("Core", "OmniExpress", "Omni 2.5M", "MEGA")),
+                                      y = score, fill = ref_panel)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  ggtitle("Barplot Grouped by Genotyping Array")+
+  xlab("Genotyping Array")+
+  ylab("Total Performance Score")+
+  theme_minimal()+
+  guides(fill = guide_legend(title = "Reference Panel"))+
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))
+
+barplot2_gw <- ggplot(ranking_gw, aes(x = ref_panel, y = score, 
+                                      fill = factor(genotyping_array, levels = c("Core", "OmniExpress", "Omni 2.5M", "MEGA")))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  ggtitle("Barplot Grouped by Reference Panel")+
+  xlab("Reference Panel")+
+  ylab("Total Performance Score")+
+  theme_minimal()+
+  guides(fill = guide_legend(title = "Genotyping Array"))+
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))
+
 
 
 ```
@@ -446,7 +506,7 @@ sketch_pgs_table = htmltools::withTags(table(
 ))
 
 
-#### collect scoring data in separate df
+#### collect scoring data in separate df (remains empty if nothing selected or if no reference data for any metric)
 scoring_data = data.frame()
 
 
@@ -502,7 +562,7 @@ if (length(params$genes) != 0) {
       
       ## create bins based on MAF -> 4 categories like paper (doi: 10.1038/s41431-021-00917-7)
       data_temp <- data_temp %>%
-        mutate(bin = cut(MAF, breaks = c(0.0000, 0.0005, 0.010, 0.05, 0.500),
+        mutate(bin = cut(MAF, breaks = c(0.0000, 0.005, 0.010, 0.05, 0.500),
                         labels = c("ultra_rare", "rare", "low_frequency", "common")))
       
       
@@ -716,32 +776,32 @@ if (length(params$pgs) != 0) {
     }
     
     
-    ## NOTE r2 is always within 0 and 1 and thus also the mean of multiple r2 values -> mean_r2 metrics all on the same scale [0, 1]
-    ## proportion hq_var is also between 0 and 1 -> same scale
-    ## nr_variants is on a different scale -> must be scaled between 0 and 1 to be included into the same score
-    
-    ## if a value should be NA (possible for MAF bins) -> calculate with 0 instead
-    pgs_queried$score <- ifelse(is.na(pgs_queried$ultra_rare.mean_r2), 0, pgs_queried$ultra_rare.mean_r2) * 5 + 
-                          ifelse(is.na(pgs_queried$rare.mean_r2), 0, pgs_queried$rare.mean_r2) * 3 +
-                          ifelse(is.na(pgs_queried$low_freq.mean_r2), 0, pgs_queried$low_freq.mean_r2) * 1.5 +
-                          ifelse(is.na(pgs_queried$common.mean_r2), 0, pgs_queried$common.mean_r2) * 1 +
-                          scale_to_range(pgs_queried$nr_hq_matches, 0, 1) * 1.5 + 
-                          scale_to_range(pgs_queried$nr_matches, 0, 1) * 2.5
-
-    scoring_data <- rbind(scoring_data, pgs_queried %>% select("genotyping_array", "ref_panel", "score"))
-    
-    pgs_queried <- pgs_queried %>%
-      arrange(desc(score)) %>%
-      mutate(genotyping_array = factor(genotyping_array)) %>%
-      mutate(ref_panel = factor(ref_panel))
-    
-    
     ### if PGS was not found -> df without rows -> then Table does not make sense, print message instead
     if (nrow(pgs_queried) == 0) {
       message_no_data_for_PGS <- list(tags$p(HTML("For this PGS there is currently no reference data available.<br>
                                              Please also check if your input PGS ID is correct.")))
       html_list_pgs <- append(html_list_pgs, message_no_data_for_PGS)
     } else {
+      
+        ## NOTE r2 is always within 0 and 1 and thus also the mean of multiple r2 values -> mean_r2 metrics all on the same scale [0, 1]
+        ## proportion hq_var is also between 0 and 1 -> same scale
+        ## nr_variants is on a different scale -> must be scaled between 0 and 1 to be included into the same score
+        
+        ## if a value should be NA (possible for MAF bins) -> calculate with 0 instead
+        pgs_queried$score <- ifelse(is.na(pgs_queried$ultra_rare.mean_r2), 0, pgs_queried$ultra_rare.mean_r2) * 5 + 
+                              ifelse(is.na(pgs_queried$rare.mean_r2), 0, pgs_queried$rare.mean_r2) * 3 +
+                              ifelse(is.na(pgs_queried$low_freq.mean_r2), 0, pgs_queried$low_freq.mean_r2) * 1.5 +
+                              ifelse(is.na(pgs_queried$common.mean_r2), 0, pgs_queried$common.mean_r2) * 1 +
+                              scale_to_range(pgs_queried$nr_hq_matches, 0, 1) * 1.5 + 
+                              scale_to_range(pgs_queried$nr_matches, 0, 1) * 2.5
+    
+        scoring_data <- rbind(scoring_data, pgs_queried %>% select("genotyping_array", "ref_panel", "score"))
+        
+        pgs_queried <- pgs_queried %>%
+          arrange(desc(score)) %>%
+          mutate(genotyping_array = factor(genotyping_array)) %>%
+          mutate(ref_panel = factor(ref_panel))
+      
         ## get datatable with appropriate styling
         styled_pgs_table <- list(datatable(pgs_queried, filter = "top", rownames = FALSE,
                                        container = sketch_pgs_table,
@@ -751,7 +811,6 @@ if (length(params$pgs) != 0) {
                                         pageLength = nrow(pgs_queried), ## show all rows (at most 12 combinations -> nicer if everything is shown directly)
                                         lengthChange = F, ## remove "Show entries" dropdown
                                         paging = F ## disable pagination of Table (not required when all rows are shown)
-                                        #columnDefs = list(list(className = 'dt-center', targets = 0:length(gene_stats_temp)))
                                         )) %>%
                                         ### display selected columns with '%' sign - CAVE: expects proportion as input
                                         #formatPercentage(c("prop_hq_variants", "ultra_rare.perc_n", "rare.perc_n", "low_freq.perc_n", "common.perc_n"),
@@ -780,99 +839,76 @@ rm(lines)
 
 
 
-#### Ranking #####
+#### Ranking for specific regions of interest (if any selected by user) #####
 
-## ranking can only be performed if user selected something (e.g. at least one gene or SNP or PGS)
-# if (length(params$pgs) != 0) {
-#   
-# }
+## ranking over specific user input can only be performed if user selected something (e.g. at least one gene or SNP or PGS)
+## ranking also only reasonable when the scoring_data df is not empty (e.g. only a SNP with no data selected, also captures the above case)
 
+html_list_ranking_specific <- list()
 
-
-ranking <- scoring_data %>%
+if (length(scoring_data) != 0) {
+  
+  ranking <- scoring_data %>%
     group_by(genotyping_array, ref_panel) %>%
     ### inserted na.rm = T bc. a SNP might have an r2 = NA
     summarize(total_score = sum(score, na.rm = T)) %>%
     arrange(desc(total_score))
-
-### rowname corresponds to the rank after correct sorting
-ranking$rank <- rownames(ranking)
-
-ranking <- ranking %>%
-  relocate(rank, .before = genotyping_array)
-
-
-ranking_table <- list(datatable(ranking, rownames = FALSE, 
-                                class = 'display',  # Add a class to target CSS
-                                colnames = c("Genotyping Array" = "genotyping_array", ### adjust colnames
-                                                  "Reference Panel" = "ref_panel",
-                                                  "Total Performance Score" = "total_score"), 
-                                options = list(dom = 'tip', pageLength = nrow(ranking), ## show all rows
-                                    lengthChange = F, ## remove "Show entries" dropdown
-                                    paging = F ## disable pagination of Table (not required when all rows are shown)
-                                    #searching = FALSE ## remove search bar, BUT then the filter no longer works!
-                                    )) %>%
-                                    formatRound(c('Total Performance Score'), digits = 3))
-
-
-header_ranking <- list(tags$h3("Performance Evaluation"))
-
-html_list_overview <- append(html_list_overview, header_ranking)
-
-
-html_list_overview <- append(html_list_overview, ranking_table)
-
-
-barplot1 <- ggplot(ranking, aes(x = genotyping_array, y = total_score, fill = ref_panel)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  #labs(title = "Barplot Grouped by Genotyping Array", x = "Genotyping Array", y = "Total Score") +
-  ggtitle("Barplot Grouped by Genotyping Array")+
-  xlab("Genotyping Array")+
-  ylab("Total Performance Score")+
-  theme_minimal()+
-  guides(fill = guide_legend(title = "Reference Panel"))+
-  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))
-
-barplot1_plotly <- ggplotly(barplot1)
-
-#barplot1_plotly <- ggplotly(barplot1) %>% layout(legendgroup = "group1", showlegend = T, legend = list(x = 0.3, y = 0.5))
-
-#html_list <- append(html_list, list(barplot1_plotly))
-
-barplot2 <- ggplot(ranking, aes(x = ref_panel, y = total_score, fill = genotyping_array)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  #labs(title = "Barplot Grouped by Reference Panel", x = "Reference Panel", y = "Total Score") +
-  ggtitle("Barplot Grouped by Reference Panel")+
-  xlab("Reference Panel")+
-  ylab("Total Performance Score")+
-  theme_minimal()+
-  guides(fill = guide_legend(title = "Genotyping Array"))+
-  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))
-
-barplot2_plotly <- ggplotly(barplot2)
-#barplot2_plotly <- ggplotly(barplot2) %>% layout(legendgroup = "group2", showlegend = T, legend = list(x = 0.95, y = 0.5))
-
-
-#combined <- subplot(barplot1_plotly, barplot2_plotly, nrows = 1)
-  # layout(
-  #   annotations = list(
-  #     list(x = 0.25, y = 1.1, text = "Plot 1 Title", showarrow = FALSE, xref = "paper", yref = "paper"),
-  #     list(x = 0.75, y = 1.1, text = "Plot 2 Title", showarrow = FALSE, xref = "paper", yref = "paper")
-  #   ),
-  #   xaxis = list(title = "X-axis Title 1"),
-  #   xaxis2 = list(title = "X-axis Title 2"),
-  #   yaxis = list(title = "Y-axis Title 1"),
-  #   yaxis2 = list(title = "Y-axis Title 2")
-  # )
-
-#html_list <- append(html_list, list(barplot2_plotly))
-
-#html_list <- append(html_list, list(combined))
+  
+  ### rowname corresponds to the rank after correct sorting
+  ranking$rank <- rownames(ranking)
+  
+  ranking <- ranking %>%
+    relocate(rank, .before = genotyping_array)
+  
+  
+  ranking_table <- list(datatable(ranking, rownames = FALSE, 
+                                  class = 'display',  # Add a class to target CSS
+                                  colnames = c("Rank" = "rank", "Genotyping Array" = "genotyping_array", ### adjust colnames
+                                                    "Reference Panel" = "ref_panel",
+                                                    "Total Performance Score" = "total_score"), 
+                                  options = list(dom = 'tip', pageLength = nrow(ranking), ## show all rows
+                                      lengthChange = F, ## remove "Show entries" dropdown
+                                      paging = F ## disable pagination of Table (not required when all rows are shown)
+                                      )) %>%
+                                      formatRound(c('Total Performance Score'), digits = 3))
+  
+  
+  header_ranking <- list(tags$h3("Performance Evaluation for Regions of Interest"))
+  
+  html_list_ranking_specific <- append(html_list_ranking_specific, header_ranking)
+  
+  
+  html_list_ranking_specific <- append(html_list_ranking_specific, ranking_table)
+  
+  
+  barplot1 <- ggplot(ranking, aes(x = genotyping_array, y = total_score, fill = ref_panel)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    ggtitle("Barplot Grouped by Genotyping Array")+
+    xlab("Genotyping Array")+
+    ylab("Total Performance Score")+
+    theme_minimal()+
+    guides(fill = guide_legend(title = "Reference Panel"))+
+    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))
+  
+  #barplot1_plotly <- ggplotly(barplot1)
+  
+  
+  barplot2 <- ggplot(ranking, aes(x = ref_panel, y = total_score, fill = genotyping_array)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    ggtitle("Barplot Grouped by Reference Panel")+
+    xlab("Reference Panel")+
+    ylab("Total Performance Score")+
+    theme_minimal()+
+    guides(fill = guide_legend(title = "Genotyping Array"))+
+    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))
+  
+  #barplot2_plotly <- ggplotly(barplot2)
+}
 
 
 
-### render everything with tagList - CAVE: only works correctly when called OUTSIDE for loop (top level)
-#tagList(html_list)
+
+
 
 
 
@@ -897,12 +933,23 @@ pop <- params$populations[[params$population]]
 
 ```{r, echo = FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=7.5, fig.width=7.5}
 
-tagList(html_list_overview)
+## specific performance evaluation only displayed if any data in scoring_data df
+if (length(scoring_data) != 0) {
+  
+  print(tagList(html_list_ranking_specific)) ## NOTE: without print only the last plot would be shown!
+
+  cat("<br>")
+  
+  print(browsable(barplot1))
+  print(browsable(barplot2))
+}
+
+tagList(html_list_ranking_gw)
 
 cat("<br>")
 
-barplot1
-barplot2
+barplot1_gw
+barplot2_gw
 
 ```
 
