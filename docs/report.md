@@ -1,7 +1,7 @@
 # Report
 
 <br>
-## 1. Tab - Overview
+## Overview Dashboard
 This tab includes some relevant metadata of the input (e.g. the selected population) and a performance evaluation.
 
 The performance evaluation is performed for each combination of
@@ -26,18 +26,23 @@ A performance evaluation for the specific regions of interest specified by the u
 Furthermore, a genome-wide performance evaluation will always be shown.
 
 The calculation of the performance scores is outlined [here](./performance-score.md).
-<br>
-<br>
 
-## 2. Tab - Genome-wide
+#### **Example:**
+
+![](images/ex_overview.png)
+
+## Genome-wide Imputation Quality
 
 This tab contains a figure, which highlights the average imputation quality by minor allele frequency (MAF).
 
 This figure illustrates that the imputation quality tends to decrease with lower MAF values.
-<br>
-<br>
 
-## 3. Tab - Genes
+#### **Example:**
+
+![](images/ex_genome_wide_plot.PNG)
+
+
+## Genes
 
 This tab provides detailed performance data for each gene, which was requested by the user if at least one variant of the reference data is present in the gene region.
 Gene coordinates are resolved automatically with dbSNP.
@@ -58,10 +63,12 @@ Each table contains the following information:
 The calculation of the performance scores is outlined [here](./performance-score.md).
 
 All columns can be filtered interactively.
-<br>
-<br>
 
-## 4. Tab - SNPs
+#### **Example:**
+
+![](images/ex_gene.png)
+
+## SNPs
 
 This tab provides detailed performance data for each SNP, which was requested by the user if the SNP is present in the reference data.
 SNP coordinates are resolved automatically with dbSNP.
@@ -77,10 +84,12 @@ Each table contains the following information:
 - MAF = minor allele frequency of this SNP according to the reference data
 
 All columns can be filtered interactively.
-<br>
-<br>
 
-## 5. Tab - Polygenic Risk Scores (PGSs)
+#### **Example:**
+
+![](images/ex_SNPs.PNG)
+
+## Polygenic Risk Scores (PGSs)
 
 This tab provides detailed performance data for each PGS, which was requested by the user if (i) the PGS is present in the PGS catalog and (ii) the PGS has at least one variant, which is present in the reference data.
 Please note that PGSs, which do not provide both reference and alternative/other allele, are not included since reliable matching with the reference data is not possible for these scores.
@@ -105,18 +114,10 @@ Each table contains the following information:
 The calculation of the performance scores is outlined [here](./performance-score.md).
 
 All columns can be filtered interactively.
-<br>
-<br>
 
-## Performance metric r2
-r2 refers to the observed imputation r-squared according to the reference data.
-It is defined as the squared Pearson correlation coefficient between the imputed genotype dosages and the sequence-based genotypes.
+#### **Example:**
 
-Further details about the r2 metric are described in the following [paper](https://doi.org/10.1016/j.ajhg.2022.07.012)
-<br>
-<br>
-
-
+![](images/ex_PGS.PNG)
 
 
 

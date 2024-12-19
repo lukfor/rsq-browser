@@ -3,7 +3,7 @@
 <br>
 In general, the performance scores are calculated as a weighted sum of multiple genotype imputation quality metrics.
 
-If a metric is not already in the same range as the r2 metric [0-1], it is scaled to this range with the following formula:
+If a metric is not already in the same range as the [r2 metric](#performance-metric-r2) [0-1], it is scaled to this range with the following formula:
 
 ![](images/formula_scaled.PNG)
 
@@ -54,3 +54,9 @@ The total performance score is the sum of the individual performance scores for 
 This score is also computed for each combination of genotyping array and imputation reference panel.
 <br>
 <br>
+
+## Performance metric r2
+r2 refers to the observed imputation r-squared according to the reference data.
+It is defined as the squared Pearson correlation coefficient between the imputed genotype dosages and the sequence-based genotypes.
+
+Further details about the r2 metric are described in the following [paper](https://doi.org/10.1016/j.ajhg.2022.07.012)
