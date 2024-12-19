@@ -173,7 +173,7 @@ This score is also computed for each combination of genotyping array and imputat
 <br>
 
 ## Description of the reference data
-Please note that the reference data currently only includes mono-allelic SNPs and only autosomal variants.
+Please note that the reference data currently only includes bi-allelic SNPs and only autosomal variants.
 
 Therefore, multi-allelic variants, indels, and sex chromosome variants will not return any evaluation results.
 
