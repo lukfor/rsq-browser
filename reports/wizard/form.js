@@ -14,15 +14,16 @@ $(document).ready(function () {
    }
 
    // Monitor changes and inputs
-   $('#populationSelect, #uploadPermission, #rareVariantAnalysis, #genotypedData').change(checkFormValidity);
+   $('#population, #genotyped, #chip').change(checkFormValidity);
    $('#genesInput, #snpsInput').on('input', checkFormValidity);
 
    // Show chip selection if "Yes" for genotyped data
    $('#genotyped').change(function () {
        if ($(this).val() === 'yes') {
+           $('#chip').val('');
            $('#chipSelection').show();
        } else {
-           $('#chipSelect').val('');
+           $('#chip').val('');
            $('#chipSelection').hide();
        }
 
