@@ -1,13 +1,20 @@
 # Getting Started
 
 <br>
-## Minimum input
+## Minimum Input
 
 To use the wizard (our main functionality) you must select at least two inputs:
 
 - One of the populations of the drop-down list
 - already genotyped -> yes/no (drop-down list)
 <br>
+<br>
+## Example Scenarios
+
+To give users an overview of the functionality of our tool, we provide two example scenarios.
+
+You can simply click on "Fill Form" below the example description and then on "Submit" to view the results of these example scenarios.
+
 <br>
 ## Detailed Description of the Input Mask  
 <p style="margin-bottom: 20px;">  </p>  
@@ -42,7 +49,9 @@ At present, reference data for the following genotyping arrays are available:
 
 If your array is not in this list, we recommend to use the array, which is most similar with regard to the number of genotyped variants.
 
-Metadata about the genotyping arrays is provided [here](#calculation-of-performance-scores).
+Metadata about the genotyping arrays is provided [here](./data-sources.md).
+
+We aim to extend the reference data to include more genotyping arrays in the future.
 
 #### Which genes are you interested in? (Enter one gene per line)
 
@@ -67,20 +76,4 @@ Only valid PGS IDs from the PGS Catalog will be accepted.
 
 ![](images/ex_interface.PNG)
 
-<br>
-<br>
-
-## Overview Dashboard
-
-<br>
-<br>
-
-## Description of Genotyping Arrays
-
-| Array         | Number of Variants | African   | Hispanic/Latino | European  | Finnish   |
-|---------------|--------------------|-----------|------------------|-----------|-----------|
-| Omni 2.5M     | 2,381,000          | 2,132,501 | 2,330,998        | 2,330,998 | 2,264,709 |
-| MEGA          | 1,780,000          | 1,415,237 | 1,759,171        | 1,759,171 | 1,676,050 |
-| OmniExpress   | 710,000            | 680,234   | 706,652          | 706,652   | 698,865   |
-| Core          | 307,000            | 266,727   | 288,599          | 288,599   | 302,423   |
 

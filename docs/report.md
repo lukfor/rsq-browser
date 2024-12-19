@@ -25,7 +25,7 @@ A performance evaluation for the specific regions of interest specified by the u
 
 Furthermore, a genome-wide performance evaluation will always be shown.
 
-The calculation of the performance scores is outlined [here](#calculation-of-performance-scores).
+The calculation of the performance scores is outlined [here](./performance-score.md).
 <br>
 <br>
 
@@ -55,7 +55,7 @@ Each table contains the following information:
     - % Variants = percentage of n Variants, which fall into this specific MAF bin
 - Performance Score = imputation quality performance score for each specific combination of genotyping array and reference panel
 
-The calculation of the performance scores is outlined [here](#calculation-of-performance-scores).
+The calculation of the performance scores is outlined [here](./performance-score.md).
 
 All columns can be filtered interactively.
 <br>
@@ -102,7 +102,7 @@ Each table contains the following information:
     - n Variants = number of matched variants, which fall into this specific MAF bin
 - Performance Score = imputation quality performance score for each specific combination of genotyping array and reference panel
 
-The calculation of the performance scores is outlined [here](#calculation-of-performance-scores).
+The calculation of the performance scores is outlined [here](./performance-score.md).
 
 All columns can be filtered interactively.
 <br>
@@ -116,68 +116,9 @@ Further details about the r2 metric are described in the following [paper](https
 <br>
 <br>
 
-## Calculation of Performance Scores
-
-In general, the performance scores are calculated as a weighted sum of multiple genotype imputation quality metrics.
-
-If a metric is not already in the same range as the r2 metric [0-1], it is scaled to this range with the following formula:
-
-![](images/formula_scaled.PNG)
-
-For most evaluations, the variants are stratified in the following 4 MAF bins:
-
-- ultra rare: MAF < 0.5 %
-- rare: MAF 0.5-1 %
-- low frequency: MAF 1-5 %
-- common: MAF > 5 %
-
-Since imputation is more challenging with rare variants and since we want to highlight imputation quality differences between different combinations of genotyping arrays and imputation reference panels, we assign increasingly higher weights to rarer variants:
-
-- weight common = 1
-- weight low frequency = 1.5
-- weight rare = 3
-- weight ultra rare = 5
-
-<br>
-### Genome-wide
-
-The total genome-wide performance score (PS) is calculated for each combination of genotyping array and reference panel across all variants as follows:
-
-![](images/formula_PS_genome_wide.PNG)
-
-### Genes
-
-The performance score (PS) for each gene is computed for each combination of genotyping array and reference panel across all imputed variants in the respective gene region with the same formula as stated above.
-<br>
-<br>
-### SNPs
-
-For SNPs, which are individually selected by the user, no performance score is calculated, since the provided r2 metrics directly reflect the imputation quality of this SNP for each combination of genotyping array and reference panel.
-
-Moreover, the SNPs requested by the user are not weighted according to their MAF, because we assume that they are all equally important for the user.
-<br>
-<br>
-### Polygenic Risk Scores (PGSs)
-
-The performance score (PS) for each PGS is computed for each combination of genotyping array and reference panel across all PGS variants, which matched with the reference data.
-
-![](images/formula_PS_PGS.PNG)
 
 
-### Total Performance Score for Regions of Interest
-<br>
-The total performance score is the sum of the individual performance scores for genes and PGSs as outlined above plus the r2 value for each custom SNP.
 
-This score is also computed for each combination of genotyping array and imputation reference panel.
-<br>
-<br>
-
-## Description of the reference data
-Please note that the reference data currently only includes bi-allelic SNPs and only autosomal variants.
-
-Therefore, multi-allelic variants, indels, and sex chromosome variants will not return any evaluation results.
-
-The generation of the reference data is outlined in this [paper](https://doi.org/10.1016/j.ajhg.2022.07.012).
 
 
 
