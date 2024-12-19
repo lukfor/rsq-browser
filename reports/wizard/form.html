@@ -9,11 +9,11 @@
     <!-- Form Section -->
     <div class="form-section">
 
-        <form id="genotypingForm" action="{{post_url}}" method="post" enctype="multipart/form-data">
+        <form id="form" action="{{post_url}}" method="post" enctype="multipart/form-data">
         <!-- Population Selection -->
         <div class="form-group">
             <label for="population">What is the population of your study?</label>
-            <select class="form-control" id="population" name="population" required>
+            <select class="form-control" id="population" name="population">
                 <option value="" disabled selected>Select a population</option>
                 {{for population in configuration.getPopulations()}}
                 <option value="{{population.id}}">{{population.label}}</option>
@@ -24,7 +24,7 @@
         <!-- Genotyped Data -->
         <div class="form-group">
             <label for="genotyped">Have you already genotyped your data?</label>
-            <select class="form-control" id="genotyped" name="genotyped" required>
+            <select class="form-control" id="genotyped" name="genotyped">
                 <option value="" disabled selected>Select an option</option>
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
@@ -65,8 +65,11 @@
 
         <hr>
 
+            <div id="errorMessage" class="text-danger"></div><br>
+
+
         <!-- Submit Button -->
-        <button type="submit" class="btn btn-primary" id="submitButton" disabled>Submit</button>
+        <button type="submit" class="btn btn-primary" id="submitButton">Submit</button>
         </form>
     </div>
 
