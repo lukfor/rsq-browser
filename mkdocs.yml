@@ -3,5 +3,6 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Report: report.md
-  - Examples: examples.md
+  - Data Sources: data-sources.md
+  - Performance Score: performance-score.md
   - About: about.md
