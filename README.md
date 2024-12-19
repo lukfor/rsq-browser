@@ -2,9 +2,12 @@
 
 # rsq-browser
 
-A web-application to search and compare imputation qualities among different populations, genotyping arrays and reference panels.
+A web-server to to Find the Optimal Genotyping Array for Imputation Studies.
 
-The application is available here: https://imputationserver.sph.umich.edu/rsq-browser
+The application is available here: https://rsq-browser.i-med.ac.at
+
+The documentation is available here: https://rsq-browser.readthedocs.io/
+
 
 ## Requirements
 
@@ -17,6 +20,6 @@ You will need the following things properly installed on your computer.
 
 This software was developed at the [Institute of Genetic Epidemiology](https://genepi.i-med.ac.at/), [Medical University of Innsbruck](https://i-med.ac.at/)
 
-![](https://avatars2.githubusercontent.com/u/210220?s=30) [Lukas Forer](mailto:lukas.forer@i-med.ac.at) ([@lukfor](https://twitter.com/lukfor))
-
-![](https://avatars2.githubusercontent.com/u/1942824?s=30) [Sebastian Schoenherr](mailto:sebastian.schoenherr@i-med.ac.at) ([@seppinho](https://twitter.com/seppinho))
+- [Florian Schnitzer](mailto:florian.schnitzer@i-med.ac.at)
+- [Lukas Forer](mailto:lukas.forer@i-med.ac.at) ([@lukfor](https://twitter.com/lukfor))
+- [Sebastian Schoenherr](mailto:sebastian.schoenherr@i-med.ac.at) ([@seppinho](https://twitter.com/seppinho))
