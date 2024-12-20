@@ -417,23 +417,23 @@ html_list_ranking_gw <- append(html_list_ranking_gw, ranking_table_gw)
 barplot1_gw <- ggplot(ranking_gw, aes(x = factor(genotyping_array, levels = c("Core", "OmniExpress", "Omni 2.5M", "MEGA")),
                                       y = score, fill = factor(ref_panel, levels = c("1000 Genomes", "HRC", "TOPMed")))) +
   geom_bar(stat = "identity", position = "dodge") +
-  ggtitle("Barplot Grouped by Genotyping Array")+
+  ggtitle("Grouped by Genotyping Array")+
   xlab("Genotyping Array")+
   ylab("Performance Score")+
   theme_minimal()+
   guides(fill = guide_legend(title = "Reference Panel"))+
-  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16), axis.text.x = element_text(size = 10.5)) +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 14), axis.text.x = element_text(size = 8.5)) +
   scale_fill_manual(values = colors_barplots)
 
 barplot2_gw <- ggplot(ranking_gw, aes(x = factor(ref_panel, levels = c("1000 Genomes", "HRC", "TOPMed")), y = score, 
                                       fill = factor(genotyping_array, levels = c("Core", "OmniExpress", "Omni 2.5M", "MEGA")))) +
   geom_bar(stat = "identity", position = "dodge") +
-  ggtitle("Barplot Grouped by Reference Panel")+
+  ggtitle("Grouped by Reference Panel")+
   xlab("Reference Panel")+
   ylab("Performance Score")+
   theme_minimal()+
   guides(fill = guide_legend(title = "Genotyping Array"))+
-  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16), axis.text.x = element_text(size = 10.5)) +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 14), axis.text.x = element_text(size = 8.5)) +
   scale_fill_manual(values = colors_barplots)
 
 
@@ -905,12 +905,12 @@ if (length(scoring_data) != 0) {
   barplot1 <- ggplot(ranking, aes(x = factor(genotyping_array, levels = c("Core", "OmniExpress", "Omni 2.5M", "MEGA")), 
                                   y = total_score, fill = factor(ref_panel, levels = c("1000 Genomes", "HRC", "TOPMed")))) +
     geom_bar(stat = "identity", position = "dodge") +
-    ggtitle("Barplot Grouped by Genotyping Array")+
+    ggtitle("Grouped by Genotyping Array")+
     xlab("Genotyping Array")+
     ylab("Performance Score")+
     theme_minimal()+
     guides(fill = guide_legend(title = "Reference Panel"))+
-    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16), axis.text.x = element_text(size = 10.5)) +
+    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 14), axis.text.x = element_text(size = 8.5)) +
     scale_fill_manual(values = colors_barplots)
   
   #barplot1_plotly <- ggplotly(barplot1)
@@ -919,12 +919,12 @@ if (length(scoring_data) != 0) {
   barplot2 <- ggplot(ranking, aes(x = factor(ref_panel, levels = c("1000 Genomes", "HRC", "TOPMed")), y = total_score, 
                                    fill = factor(genotyping_array, levels = c("Core", "OmniExpress", "Omni 2.5M", "MEGA")))) +
     geom_bar(stat = "identity", position = "dodge") +
-    ggtitle("Barplot Grouped by Reference Panel")+
+    ggtitle("Grouped by Reference Panel")+
     xlab("Reference Panel")+
     ylab("Performance Score")+
     theme_minimal()+
     guides(fill = guide_legend(title = "Genotyping Array"))+
-    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16), axis.text.x = element_text(size = 10.5)) +
+    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 14), axis.text.x = element_text(size = 8.5)) +
     scale_fill_manual(values = colors_barplots)
   
   #barplot2_plotly <- ggplotly(barplot2)
