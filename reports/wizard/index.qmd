@@ -395,12 +395,13 @@ ranking_table_gw <- list(datatable(ranking_gw, rownames = FALSE,
                                 class = 'display',  # Add a class to target CSS
                                 colnames = c("Rank" = "rank", "Genotyping Array" = "genotyping_array", ### adjust colnames
                                                   "Reference Panel" = "ref_panel",
-                                                  "Total Performance Score" = "score"), 
+                                                  "Performance Score" = "score"),
                                 options = list(dom = 'tip', pageLength = nrow(ranking_gw), ## show all rows
                                     lengthChange = F, ## remove "Show entries" dropdown
-                                    paging = F ## disable pagination of Table (not required when all rows are shown)
+                                    paging = F, ## disable pagination of Table (not required when all rows are shown)
+                                    scrollX = T
                                     )) %>%
-                                    formatRound(c('Total Performance Score'), digits = 3))
+                                    formatRound(c('Performance Score'), digits = 3))
 
 html_list_ranking_gw <- list()
 
@@ -418,10 +419,10 @@ barplot1_gw <- ggplot(ranking_gw, aes(x = factor(genotyping_array, levels = c("C
   geom_bar(stat = "identity", position = "dodge") +
   ggtitle("Barplot Grouped by Genotyping Array")+
   xlab("Genotyping Array")+
-  ylab("Total Performance Score")+
+  ylab("Performance Score")+
   theme_minimal()+
   guides(fill = guide_legend(title = "Reference Panel"))+
-  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))+
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16), axis.text.x = element_text(size = 10.5)) +
   scale_fill_manual(values = colors_barplots)
 
 barplot2_gw <- ggplot(ranking_gw, aes(x = factor(ref_panel, levels = c("1000 Genomes", "HRC", "TOPMed")), y = score, 
@@ -429,10 +430,10 @@ barplot2_gw <- ggplot(ranking_gw, aes(x = factor(ref_panel, levels = c("1000 Gen
   geom_bar(stat = "identity", position = "dodge") +
   ggtitle("Barplot Grouped by Reference Panel")+
   xlab("Reference Panel")+
-  ylab("Total Performance Score")+
+  ylab("Performance Score")+
   theme_minimal()+
   guides(fill = guide_legend(title = "Genotyping Array"))+
-  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))+
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16), axis.text.x = element_text(size = 10.5)) +
   scale_fill_manual(values = colors_barplots)
 
 
@@ -621,7 +622,8 @@ if (length(params$genes) != 0) {
                                       dom = 'tip',
                                       pageLength = nrow(gene_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
                                       lengthChange = F, ## remove "Show entries" dropdown
-                                      paging = F ## disable pagination of Table (not required when all rows are shown)
+                                      paging = F, ## disable pagination of Table (not required when all rows are shown)
+                                      scrollX = T
                                       )) %>%
                                       ### display selected columns with '%' sign - CAVE: expects proportion as input
                                       formatPercentage(c("prop_hq_variants", "ultra_rare.perc_n", "rare.perc_n", "low_freq.perc_n", "common.perc_n"),
@@ -736,7 +738,8 @@ if (length(params$snps) != 0) {
                                           dom = 'tip',
                                           pageLength = nrow(snp_stats_temp), ## show all rows (only 12 combinations -> nicer if everything is shown directly)
                                           lengthChange = F, ## remove "Show entries" dropdown
-                                          paging = F ## disable pagination of Table (not required when all rows are shown)
+                                          paging = F, ## disable pagination of Table (not required when all rows are shown)
+                                          scrollX = T
                                           )) %>%
                                           ### display selected columns with a fixed set of digits (with trailing zeros displayed)
                                           formatRound(c('r2'), digits = 3) %>%
@@ -826,7 +829,8 @@ if (length(params$pgs) != 0) {
                                         dom = 'tip',
                                         pageLength = nrow(pgs_queried), ## show all rows (at most 12 combinations -> nicer if everything is shown directly)
                                         lengthChange = F, ## remove "Show entries" dropdown
-                                        paging = F ## disable pagination of Table (not required when all rows are shown)
+                                        paging = F, ## disable pagination of Table (not required when all rows are shown),
+                                        scrollX = T
                                         )) %>%
                                         ### display selected columns with '%' sign - CAVE: expects proportion as input
                                         #formatPercentage(c("prop_hq_variants", "ultra_rare.perc_n", "rare.perc_n", "low_freq.perc_n", "common.perc_n"),
@@ -881,12 +885,13 @@ if (length(scoring_data) != 0) {
                                   class = 'display',  # Add a class to target CSS
                                   colnames = c("Rank" = "rank", "Genotyping Array" = "genotyping_array", ### adjust colnames
                                                     "Reference Panel" = "ref_panel",
-                                                    "Total Performance Score" = "total_score"), 
+                                                    "Performance Score" = "total_score"),
                                   options = list(dom = 'tip', pageLength = nrow(ranking), ## show all rows
                                       lengthChange = F, ## remove "Show entries" dropdown
-                                      paging = F ## disable pagination of Table (not required when all rows are shown)
+                                      paging = F, ## disable pagination of Table (not required when all rows are shown)
+                                      scrollX = T
                                       )) %>%
-                                      formatRound(c('Total Performance Score'), digits = 3))
+                                      formatRound(c('Performance Score'), digits = 3))
   
   
   header_ranking <- list(tags$h3("Performance Evaluation for Regions of Interest"))
@@ -902,10 +907,10 @@ if (length(scoring_data) != 0) {
     geom_bar(stat = "identity", position = "dodge") +
     ggtitle("Barplot Grouped by Genotyping Array")+
     xlab("Genotyping Array")+
-    ylab("Total Performance Score")+
+    ylab("Performance Score")+
     theme_minimal()+
     guides(fill = guide_legend(title = "Reference Panel"))+
-    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))+
+    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16), axis.text.x = element_text(size = 10.5)) +
     scale_fill_manual(values = colors_barplots)
   
   #barplot1_plotly <- ggplotly(barplot1)
@@ -916,10 +921,10 @@ if (length(scoring_data) != 0) {
     geom_bar(stat = "identity", position = "dodge") +
     ggtitle("Barplot Grouped by Reference Panel")+
     xlab("Reference Panel")+
-    ylab("Total Performance Score")+
+    ylab("Performance Score")+
     theme_minimal()+
     guides(fill = guide_legend(title = "Genotyping Array"))+
-    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16))+
+    theme(plot.title = element_text(hjust = 0.5), text = element_text(size = 16), axis.text.x = element_text(size = 10.5)) +
     scale_fill_manual(values = colors_barplots)
   
   #barplot2_plotly <- ggplotly(barplot2)
@@ -945,7 +950,7 @@ pop <- params$populations[[params$population]]
 
 
 
-```{r, echo = FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=7.5, fig.width=7.5}
+```{r, echo = FALSE, warning=FALSE, message=FALSE, results='asis', fig.height=4, fig.width=6}
 
 ## specific performance evaluation only displayed if any data in scoring_data df
 if (length(scoring_data) != 0) {
