@@ -1,6 +1,5 @@
 # Report
 
-<br>
 ## Overview Dashboard
 This tab includes some relevant metadata of the input (e.g. the selected population) and a performance evaluation.
 
@@ -27,7 +26,9 @@ Furthermore, a genome-wide performance evaluation will always be shown.
 
 The calculation of the performance scores is outlined [here](./performance-score.md).
 
-#### **Example:**
+<font size="5">
+**Example:**
+</font>
 
 ![](images/ex_overview.png)
 
@@ -37,7 +38,9 @@ This tab contains a figure, which highlights the average imputation quality by m
 
 This figure illustrates that the imputation quality tends to decrease with lower MAF values.
 
-#### **Example:**
+<font size="5">
+**Example:**
+</font>
 
 ![](images/ex_genome_wide_plot.PNG)
 
@@ -64,7 +67,9 @@ The calculation of the performance scores is outlined [here](./performance-score
 
 All columns can be filtered interactively.
 
-#### **Example:**
+<font size="5">
+**Example:**
+</font>
 
 ![](images/ex_gene.png)
 
@@ -85,7 +90,9 @@ Each table contains the following information:
 
 All columns can be filtered interactively.
 
-#### **Example:**
+<font size="5">
+**Example:**
+</font>
 
 ![](images/ex_SNPs.PNG)
 
@@ -115,7 +122,9 @@ The calculation of the performance scores is outlined [here](./performance-score
 
 All columns can be filtered interactively.
 
-#### **Example:**
+<font size="5">
+**Example:**
+</font>
 
 ![](images/ex_PGS.PNG)
 

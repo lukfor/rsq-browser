@@ -1,23 +1,19 @@
 # Getting Started
 
-<br>
 ## Minimum Input
 
 To use the wizard (our main functionality) you must select at least two inputs:
 
 - One of the populations of the drop-down list
 - already genotyped -> yes/no (drop-down list)
-<br>
-<br>
+
 ## Example Scenarios
 
 To give users an overview of the functionality of our tool, we provide two example scenarios.
 
 You can simply click on "Fill Form" below the example description and then on "Submit" to view the results of these example scenarios.
 
-<br>
 ## Detailed Description of the Input Mask  
-<p style="margin-bottom: 20px;">  </p>  
 
 #### What is the population of your study?
 
@@ -31,7 +27,7 @@ At present, the following populations are available:
 - European
 - Finnish
 - Hispanic/Latino
-<p style="margin-bottom: 20px;">  </p>  
+
 #### Have you already genotyped your data?
 
 If you already genotyped your data you should choose "Yes" to restrict the analysis to the most suitable genotyping array/chip.
@@ -71,7 +67,6 @@ Here you can optionally add a list of PGS IDs of interest. The wizard will then 
 
 Only valid PGS IDs from the PGS Catalog will be accepted.
 
-<br>
 ## Valid Example Input
 
 ![](images/ex_interface.PNG)

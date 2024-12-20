@@ -1,8 +1,6 @@
 # Metadata Descriptions
 
-<br>
 ## Description of Genotyping Arrays
-<p style="margin-bottom: 20px;">  </p>  
 
 | Array         | Number of Variants | African   | Hispanic/Latino | European  | Finnish   |
 |---------------|--------------------|-----------|------------------|-----------|-----------|
@@ -11,7 +9,6 @@
 | OmniExpress   | 710,000            | 680,234   | 706,652          | 706,652   | 698,865   |
 | Core          | 307,000            | 266,727   | 288,599          | 288,599   | 302,423   |
 
-<br>
 ## Description of Reference Data
 Please note that the reference data currently only includes bi-allelic SNPs and autosomal variants.
 
