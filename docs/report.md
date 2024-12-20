@@ -19,7 +19,7 @@ The included genotyping arrays and imputation panels cover a broad range of scen
 - OmniExpress represents an array with a medium number of markers (> 700,000)
 - Core represents an array with a low number of markers (~ 300,000)
 
-Detailed information about the genotyping arrays, imputation panels, and the reference data is provided in the following [paper](https://doi.org/10.1016/j.ajhg.2022.07.012)
+Detailed information about the genotyping arrays, imputation panels, and the reference data is provided in this [paper](https://doi.org/10.1016/j.ajhg.2022.07.012)
 
 A performance evaluation for the specific regions of interest specified by the user will be shown first after the input metadata (if user specified any specific input).
 

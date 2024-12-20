@@ -35,7 +35,7 @@ The performance score (PS) for each gene is computed for each combination of gen
 <br>
 ## SNPs
 
-For SNPs, which are individually selected by the user, no performance score is calculated, since the provided r2 metrics directly reflect the imputation quality of this SNP for each combination of genotyping array and reference panel.
+For SNPs, which are individually selected by the user, no performance score is calculated, since the provided r2 metrics directly reflect the imputation quality of the SNPs for each combination of genotyping array and reference panel.
 
 Moreover, the SNPs requested by the user are not weighted according to their MAF, because we assume that they are all equally important for the user.
 <br>
@@ -59,4 +59,4 @@ This score is also computed for each combination of genotyping array and imputat
 r2 refers to the observed imputation r-squared according to the reference data.
 It is defined as the squared Pearson correlation coefficient between the imputed genotype dosages and the sequence-based genotypes.
 
-Further details about the r2 metric are described in the following [paper](https://doi.org/10.1016/j.ajhg.2022.07.012)
+Further details about the r2 metric are described in this [paper](https://doi.org/10.1016/j.ajhg.2022.07.012)
