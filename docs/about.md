@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+  - toc 
+---
 # About
 
 This service allows you to search and compare imputation qualities among different populations, genotyping arrays and reference panels.

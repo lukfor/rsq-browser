@@ -1,4 +1,16 @@
 site_name: Rsq-Browser 2
+site_url: !ENV READTHEDOCS_CANONICAL_URL
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - toc.integrate
+  palette:
+    primary: custom
+
+extra_css:
+  - stylesheets/extra.css
+
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
